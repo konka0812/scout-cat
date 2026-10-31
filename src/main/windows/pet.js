@@ -81,7 +81,13 @@ export class PetWindow {
     this.setClickThrough(ignore);
   }
   moveTo(x, y) {
-    this.win.setPosition(Math.round(x), Math.round(y), false);
+    // 夹在可视工作区内：拖太远会够不着（窗口平时是点击穿透的）
+    const { workArea } = screen.getPrimaryDisplay();
+    const maxX = workArea.x + workArea.width - this.w;
+    const maxY = workArea.y + workArea.height - this.h;
+    const cx = Math.max(workArea.x, Math.min(Math.round(x), maxX));
+    const cy = Math.max(workArea.y, Math.min(Math.round(y), maxY));
+    this.win.setPosition(cx, cy, false);
   }
   getBounds() {
     return this.win.getBounds();
