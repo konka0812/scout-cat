@@ -1,0 +1,30 @@
+name: iOS Swift Build
+
+on:
+  push:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'ios/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    # macOS runner 自带 Xcode + Swift 工具链
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Build core package
+        working-directory: ios
+        run: swift build
+
+      - name: Run tests
+        working-directory: ios
+        run: swift test
