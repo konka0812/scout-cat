@@ -9,8 +9,6 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron .",
-    "gen:character": "node scripts/gen-assets.mjs character longcat.png character-base.png",
-    "gen:sheets": "node scripts/gen-sheets.mjs",
     "prestart": "electron-vite build"
   },
   "dependencies": {

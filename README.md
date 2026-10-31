@@ -35,19 +35,18 @@ npm run dev
 
 > 搜索接口：`POST /v1/tools/search`、`POST /v1/tools/fetch`，详见 [DeepSeek 文档](https://api-docs.deepseek.com/zh-cn/api/search.md)
 
-## 生成宠物素材
+## 宠物素材
 
-素材基于中转站图生图（`longcat.png` 作为角色身份参考）：
+素材已预生成并提交在 `assets/pet/`：
 
-```bash
-# 角色标准图
-npm run gen:character
+| 文件 | 用途 |
+|---|---|
+| `character-base.png` | 角色标准图（引导页 logo，也是动作图集加载失败时的兜底） |
+| `{idle,walk,sleep,discover,deliver,pet}.png` | 六个动作的 5×5 精灵图 |
 
-# 六个动作图集（依赖 character-base.png）
-npm run gen:sheets
-```
-
-> 图集下载需走代理（`http://127.0.0.1:7897`），详见 `test-api/image-api.mjs`。
+> 素材由中转站图生图一次性生成（脚本已不在仓库内，也不再需要）。
+> `idle / sleep / walk` 在运行时是**程序化动画**（正弦呼吸/浮动/眨眼），
+> 只用第 0 帧；`discover / deliver / pet` 用完整精灵表顺序播放。
 
 ## 技术栈
 
@@ -64,9 +63,7 @@ src/
 ├── preload/         上下文桥
 ├── renderer/        pet / backpack / settings 三个渲染层
 └── common/engines/  引擎适配器与提示词
-assets/pet/          生成的角色与动作图集
-scripts/             素材生成脚本
-test-api/            中转站图生图客户端
+assets/pet/          角色标准图 + 六个动作精灵图（已预生成）
 ```
 
 ## 开发状态
