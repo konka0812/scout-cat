@@ -40,8 +40,9 @@ jobs:
       - name: 编译 iOS App（模拟器）
         working-directory: ios
         run: |
-          ls -la ScoutCat.xcodeproj
-          xcodebuild -list -project ScoutCat.xcodeproj
+          plutil -lint ScoutCat.xcodeproj/project.pbxproj
+          head -30 ScoutCat.xcodeproj/project.pbxproj
+          xcodebuild -list -project ScoutCat.xcodeproj 2>&1 | head -40
           xcodebuild -project ScoutCat.xcodeproj \
             -scheme ScoutCat \
             -sdk iphonesimulator \
