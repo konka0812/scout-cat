@@ -40,6 +40,8 @@ export class PetWindow {
     });
     win.setAlwaysOnTop(true, "screen-saver");
     win.setIgnoreMouseEvents(true, { forward: true });
+    // 内容尺寸会把系统最小窗口抬到当前大小，导致放大后缩不回去
+    win.setMinimumSize(1, 1);
     win.loadURL(rendererUrl("pet"));
     this.win = win;
     this.w = w;
@@ -90,6 +92,7 @@ export class PetWindow {
     const w = Math.round(WIN_W * s);
     const h = Math.round(WIN_H * s);
     const b = this.win.getBounds();
+    this.win.setMinimumSize(1, 1);
     this.win.setSize(w, h, false);
     // 保持右下角不动，避免放大后跑出屏幕
     this.win.setPosition(b.x + (b.width - w), b.y + (b.height - h), false);

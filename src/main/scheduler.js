@@ -164,6 +164,13 @@ if ($w -ge $mw -and $h -ge $mh) { Write-Output "1" } else { Write-Output "0" }
         rotation: this.rotation++,
       };
       const result = await runPipeline(cfg);
+      if (process.env.PET_DEBUG) {
+        console.log("[patrol] ok=" + result?.ok,
+          "items=" + (result?.items?.length || 0),
+          "processed=" + JSON.stringify(result?.processed || {}),
+          "error=" + (result?.error || "-"),
+          "queries=" + JSON.stringify((result?.queries || []).map(q => ({ t: q.topic, ok: q.ok, n: q.count, e: q.error }))));
+      }
       this.lastStatus = result?.ok ? "success" : "error";
       this.lastError = result?.error || "";
       this.lastRun = Date.now();
