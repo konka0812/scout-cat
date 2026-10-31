@@ -1,7 +1,6 @@
 const canvas = document.getElementById("pet");
 const ctx = canvas.getContext("2d");
 const bubbleEl = document.getElementById("bubble");
-const fallbackEl = document.getElementById("fallback");
 
 const GRID = 5;
 const FPS = 12;
@@ -9,6 +8,17 @@ const FRAME_MS = 1000 / FPS;
 const TOTAL = GRID * GRID;
 const ACTIONS = ["idle", "sleep", "walk", "discover", "deliver", "pet"];
 const SINGLE_SHOT = new Set(["discover", "deliver", "pet"]);
+
+// 精灵表单帧原始 205px（1024/5）。基准窗口 320 宽 → 占比 0.6406。
+// 渲染尺寸 = 窗口尺寸 × 这个比例，所以「缩放」设置改窗口大小时猫会跟着变。
+const FRAME_NATURAL = 205;
+const BASE_WIN_W = 320;
+const FRAME_RATIO = FRAME_NATURAL / BASE_WIN_W;
+
+/** 精灵图渲染边长：跟窗口联动，且不超出高度 */
+function spriteSize(W, H) {
+  return Math.min(W * FRAME_RATIO, H * 0.92);
+}
 
 // ===== 动画配置 =====
 // prog = 单帧 + 程序动画（正弦呼吸/浮动，流畅无抖动）
@@ -55,14 +65,8 @@ async function init() {
     petDir = "";
   }
 
-  const ok = await loadSheet("idle");
-  if (!ok) {
-    fallbackEl.style.display = "flex";
-    canvas.style.display = "none";
-  } else {
-    fallbackEl.style.display = "none";
-  }
-  for (const a of ACTIONS) if (a !== "idle") loadSheet(a);
+  // 素材缺失就跳过该动作，不回退到别的图
+  for (const a of ACTIONS) loadSheet(a);
   loadBubbleConfig();
   requestAnimationFrame(loop);
   setupInteraction();
@@ -83,8 +87,8 @@ async function loadSheet(action) {
       return null;
     }
   };
-  const src = (await tryLoad(`${action}.png`)) || (await tryLoad("character-base.png"));
-  if (!src) return false;
+  const src = await tryLoad(`${action}.png`);
+  if (!src) return false;   // 缺素材就跳过该动作，不回退到别的图
 
   if (cfg.mode === "prog") {
     // 程序动画：裁切第 0 帧，配合正弦运动（流畅）
@@ -101,10 +105,9 @@ async function loadSheet(action) {
 function drawSheet(img, W, H, t) {
   const fw = img.naturalWidth / GRID;
   const fh = img.naturalHeight / GRID;
-  const frame = Math.min(fw, fh);
-  const size = Math.min(256, W * 0.86);
+  const size = spriteSize(W, H);
   const x = (W - size) / 2;
-  const y = H - size;
+  const y = H - size - H * 0.04;
   const col = frameIndex % GRID;
   const row = Math.floor(frameIndex / GRID) % GRID;
   ctx.clearRect(0, 0, W, H);
@@ -117,9 +120,7 @@ function drawProg(img, W, H, t, cfg = {}) {
   const bob = (cfg.bobAmp ?? 2) * Math.sin((t / (cfg.bobPeriod ?? 3600)) * Math.PI * 2);
   const blinkState = cfg.blink ? updateBlink() : false;
 
-  const maxW = W * 0.86;
-  const maxH = H * 0.72;
-  const base = Math.min(maxW, maxH, 256);
+  const base = spriteSize(W, H);
   const size = base * breath;
   const x = (W - size) / 2;
   const y = H - size - H * 0.04 + bob;

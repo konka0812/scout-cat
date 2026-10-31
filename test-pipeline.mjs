@@ -13,7 +13,7 @@ const ok = (name, cond) => { if (cond) { pass++; console.log(`  ✓ ${name}`); }
 
 /** 内存 store */
 function memStore(initial = {}) {
-  const data = { articles: [], events: [], notifications: [], discoveries: [], watchTasks: [], ...initial };
+  const data = { articles: [], events: [], notifications: [], discoveries: [], ...initial };
   return {
     get: (k, d) => (k in data ? data[k] : d),
     set: (k, v) => { data[k] = v; },

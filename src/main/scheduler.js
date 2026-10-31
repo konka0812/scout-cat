@@ -151,9 +151,8 @@ if ($w -ge $mw -and $h -ge $mh) { Write-Output "1" } else { Write-Output "0" }
         searchBase: oc.searchBase || "https://api.deepseek.com",
         interests: settings.interests || [],
         blockedTopics: settings.blockedTopics || [],
-        watchTasks: store.get("watchTasks", []),
         lastCheck: store.get("lastCheck"),
-        engine: settings.engine || "demo",
+        engine: "openai",
         openai: oc,
         feedback: settings.feedback || {},
         queryCount: settings.queryCount || 3,
@@ -256,13 +255,6 @@ if ($w -ge $mw -and $h -ge $mh) { Write-Output "1" } else { Write-Output "0" }
     return true;
   }
 
-  /** 关注任务是否突破每日上限 */
-  shouldBypassLimit(item) {
-    const settings = getStore().get("settings");
-    if (!settings.watchBypassLimit) return false;
-    return Boolean(item?.watchTaskId);
-  }
-
   /**
    * 【问题5】统一管理提醒：遵守免打扰和每日上限，一次只展示一条，其余进背包。
    * 最新一条优先弹出（未达上限时），达上限时进入积压队列最前，恢复后优先补弹。
@@ -280,11 +272,6 @@ if ($w -ge $mw -and $h -ge $mh) { Write-Output "1" } else { Write-Output "0" }
       this.petWindow?.showBubble(first);
       store.set("bubbleCountToday", (store.get("bubbleCountToday", 0) + 1));
       store.set("monthlyBubbleCount", (store.get("monthlyBubbleCount", 0) + 1));
-      this.markNotified(first);
-      this.bubblePending.push(...items.filter((i) => i !== first));
-    } else if (this.shouldBypassLimit(first)) {
-      // 关注任务允许突破上限
-      this.petWindow?.showBubble(first);
       this.markNotified(first);
       this.bubblePending.push(...items.filter((i) => i !== first));
     } else {

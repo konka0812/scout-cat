@@ -55,7 +55,7 @@ app.whenReady().then(async () => {
   // 开机启动
   app.setLoginItemSettings({ openAtLogin: store.get("settings.launchAtLogin") || false });
 
-  petWindow = new PetWindow();
+  petWindow = new PetWindow({ scale: store.get("pet.scale") || 1 });
   createTray({ openBackpack, openSettings, runNow: () => scheduler?.runNow() });
   scheduler = new Scheduler({ petWindow });
   scheduler.start();
@@ -147,22 +147,6 @@ function registerIpc() {
     // 反馈闭环：更新 feedback + notification 状态
     const d = list.find((x) => x.id === id);
     if (d) applyFeedback(store, d, patch);
-    return list;
-  });
-
-  // 关注任务
-  ipcMain.handle("watch:list", () => getStore().get("watchTasks", []));
-  ipcMain.handle("watch:add", (_e, task) => {
-    const store = getStore();
-    const list = store.get("watchTasks", []);
-    list.push(task);
-    store.set("watchTasks", list);
-    return list;
-  });
-  ipcMain.handle("watch:update", (_e, id, patch) => {
-    const store = getStore();
-    const list = store.get("watchTasks", []).map((t) => (t.id === id ? { ...t, ...patch } : t));
-    store.set("watchTasks", list);
     return list;
   });
 

@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 const WIN_W = 320;
 const WIN_H = 380;
-const FRAME = 256;
 
 function rendererUrl(name) {
   const dev = process.env.VITE_DEV_SERVER_URL;
@@ -12,9 +11,10 @@ function rendererUrl(name) {
 }
 
 export class PetWindow {
-  constructor() {
+  constructor({ scale = 1 } = {}) {
     const { workArea } = screen.getPrimaryDisplay();
-    this.scale = 1;
+    // 启动时就读 settings.pet.scale，之前只在设置界面改才生效
+    this.scale = Math.max(0.5, Number(scale) || 1);
     const w = Math.round(WIN_W * this.scale);
     const h = Math.round(WIN_H * this.scale);
     const win = new BrowserWindow({
@@ -73,10 +73,16 @@ export class PetWindow {
     return this.win.getBounds();
   }
   setScale(scale) {
-    this.scale = scale;
-    this.w = Math.round(WIN_W * scale);
-    this.h = Math.round(WIN_H * scale);
-    this.win.setSize(this.w, this.h, false);
+    const s = Math.max(0.5, Number(scale) || 1);
+    this.scale = s;
+    const w = Math.round(WIN_W * s);
+    const h = Math.round(WIN_H * s);
+    const b = this.win.getBounds();
+    this.win.setSize(w, h, false);
+    // 保持右下角不动，避免放大后跑出屏幕
+    this.win.setPosition(b.x + (b.width - w), b.y + (b.height - h), false);
+    this.w = w;
+    this.h = h;
   }
   isDestroyed() {
     return this.win.isDestroyed();

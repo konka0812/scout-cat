@@ -7,7 +7,7 @@ export function initStore() {
     defaults: {
       pet: { name: "猎猫", scale: 1, x: null, y: null },
       settings: {
-        engine: "demo",
+        engine: "openai",
         searchIntervalMinutes: 60,
         dailyBubbleLimit: 3,
         interests: [],
@@ -16,7 +16,6 @@ export function initStore() {
         // 偏好反馈（文档第 2/3 节）：引擎读取以调整后续查询
         feedback: { mutedTopics: [], likedTopics: [], mutedUrls: [] },
         // 可配置参数（文档第 6 节）
-        watchBypassLimit: false,      // 关注任务突破每日上限
         monthlyBubbleLimit: 0,        // 每月提醒上限（0=不限）
         queryCount: 3,                // 每次巡逻查询数
         fetchLimit: 6,                // 单次 Fetch 上限
@@ -52,7 +51,6 @@ export function initStore() {
       // 已推荐的 GitHub 仓库（去重）
       githubRecommended: [],
       discoveries: [],
-      watchTasks: [],
       lastCheck: null,
       bubbleCountToday: 0,
       bubbleDate: null,

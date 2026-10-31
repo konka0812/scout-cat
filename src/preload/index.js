@@ -25,9 +25,6 @@ contextBridge.exposeInMainWorld("scoutcat", {
   listUnread: () => ipcRenderer.invoke("discoveries:unread"),
   getBubbleConfig: () => ipcRenderer.invoke("bubbleConfig"),
 
-  listWatch: () => ipcRenderer.invoke("watch:list"),
-  addWatch: (task) => ipcRenderer.invoke("watch:add", task),
-  updateWatch: (id, patch) => ipcRenderer.invoke("watch:update", id, patch),
 
   listReview: () => ipcRenderer.invoke("review:list"),
   resolveReview: (id, patch) => ipcRenderer.invoke("review:resolve", id, patch),

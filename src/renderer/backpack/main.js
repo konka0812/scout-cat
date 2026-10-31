@@ -2,7 +2,6 @@ const $ = (id) => document.getElementById(id);
 const listEl = document.getElementById("list");
 const tabBtns = document.querySelectorAll(".tabs button");
 let discoveries = [];
-let watchTasks = [];
 let reviewList = [];
 let tab = "new";
 
@@ -23,7 +22,6 @@ const fmtTime = (t) => {
 
 async function load() {
   discoveries = await window.scoutcat.listDiscoveries();
-  watchTasks = await window.scoutcat.listWatch();
   reviewList = await window.scoutcat.listReview();
   render();
 }
@@ -38,7 +36,6 @@ function sortByNewest(items) {
 }
 
 function render() {
-  if (tab === "watch") return renderWatch();
   if (tab === "review") return renderReview();
   const items = sortByNewest(tab === "fav" ? discoveries.filter((d) => d.favorite) : discoveries);
   if (!items.length) {
@@ -106,34 +103,6 @@ function bindItemEvents() {
         }
         await load();
       });
-    });
-  });
-}
-
-function renderWatch() {
-  if (!watchTasks.length) {
-    listEl.innerHTML = `<div class="empty">还没有关注任务，去设置里添加</div>`;
-    return;
-  }
-  listEl.innerHTML = watchTasks
-    .map(
-      (t) => `<div class="item watch-item" data-id="${esc(t.id)}">
-        <div class="info">
-          <div class="title">${esc(t.target)}</div>
-          <div class="meta">${esc(t.condition)}</div>
-          <div class="status">最近检查：${t.lastCheck ? fmtTime(t.lastCheck) : "尚未检查"} · ${t.status === "paused" ? "已暂停" : t.status === "done" ? "已达成" : "进行中"}</div>
-        </div>
-        <button data-act="toggle">${t.status === "paused" ? "继续" : "暂停"}</button>
-      </div>`
-    )
-    .join("");
-  listEl.querySelectorAll(".item button").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const id = btn.closest(".item").dataset.id;
-      const t = watchTasks.find((x) => x.id === id);
-      if (!t) return;
-      window.scoutcat.updateWatch(id, { status: t.status === "paused" ? "active" : "paused" });
-      await load();
     });
   });
 }

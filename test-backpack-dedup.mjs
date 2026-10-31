@@ -16,7 +16,7 @@ let pass = 0, fail = 0;
 const ok = (name, cond) => { if (cond) { pass++; console.log(`  \u2713 ${name}`); } else { fail++; console.log(`  \u2717 ${name}`); } };
 
 function memStore(initial = {}) {
-  const data = { articles: [], events: [], notifications: [], discoveries: [], watchTasks: [], candidateStatus: {}, pendingReview: [], ...initial };
+  const data = { articles: [], events: [], notifications: [], discoveries: [], candidateStatus: {}, pendingReview: [], ...initial };
   return { get: (k, d) => (k in data ? data[k] : d), set: (k, v) => { data[k] = v; }, _data: data };
 }
 function mockEngine(candidates, decisions) {

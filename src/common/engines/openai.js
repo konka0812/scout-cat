@@ -84,7 +84,6 @@ export const openaiAdapter = {
     // 1. 生成主题查询（含偏好反馈）
     const queries = buildSearchQueries({
       interests: cfg.interests || [],
-      watchTasks: cfg.watchTasks || [],
       blockedTopics: cfg.blockedTopics || [],
       feedback,
       rotation,
@@ -162,7 +161,6 @@ export const openaiAdapter = {
     const userPrompt = buildJudgeUserPrompt({
       interests: cfg.interests,
       blockedTopics: cfg.blockedTopics,
-      watchTasks: cfg.watchTasks,
       feedback,
       now,
       candidates: candidates.slice(0, 8),

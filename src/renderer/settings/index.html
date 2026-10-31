@@ -117,10 +117,6 @@
             <label>每月提醒上限（0=不限）</label>
             <input type="number" id="monthlyLimit" min="0" max="500" />
           </div>
-          <div>
-            <label>关注任务突破上限</label>
-            <select id="watchBypass"><option value="no">不允许</option><option value="yes">允许</option></select>
-          </div>
         </div>
         <div class="check"><input type="checkbox" id="launchAtLogin" /><span>开机自动启动</span></div>
         <div class="row" style="margin-top: 10px">
@@ -162,13 +158,9 @@
       </section>
 
       <section>
-        <h2>执行引擎</h2>
-        <div class="engine" id="engineRow">
-          <button data-engine="openai">OpenAI 兼容 + 搜索<span class="st" id="st-openai">检测中…</span></button>
-          <button data-engine="demo">演示模式<span class="st" id="st-demo">✓ 可用</span></button>
-        </div>
+        <h2>接口</h2>
         <div class="hint">OpenAI 兼容接口自行填写，搜索使用 DeepSeek Search/Fetch。</div>
-        <div class="api-config" id="apiConfig">
+        <div class="api-config show">
           <label>Base URL</label>
           <input type="text" id="baseUrl" placeholder="https://api.deepseek.com/v1" />
           <label style="margin-top: 8px">API Key</label>
@@ -179,6 +171,16 @@
           <input type="text" id="searchKey" placeholder="留空则复用 API Key" />
           <label style="margin-top: 8px">Search Base URL</label>
           <input type="text" id="searchBase" placeholder="https://api.deepseek.com" />
+        </div>
+        <div class="row" style="margin-top: 10px">
+          <div>
+            <label>连通性</label>
+            <div class="status" id="engineStatus">检测中…</div>
+          </div>
+          <div>
+            <label> </label>
+            <div class="actions"><button class="ghost" id="checkEngine">重新检测</button></div>
+          </div>
         </div>
       </section>
 
@@ -200,20 +202,6 @@
         </div>
         <div class="check"><input type="checkbox" id="jsonMode" checked /><span>模型 JSON Output 模式（提升解析稳定性）</span></div>
       </details>
-
-      <section>
-        <h2>关注任务</h2>
-        <div class="watch-form">
-          <label>盯着谁 / 什么</label>
-          <input type="text" id="watchTarget" placeholder="例如：某开源项目" />
-          <label style="margin-top: 8px">达成条件</label>
-          <input type="text" id="watchCond" placeholder="例如：发布 Windows 版" />
-          <div class="actions">
-            <button class="primary" id="addWatch">添加关注</button>
-          </div>
-        </div>
-        <div class="status" id="watchStatus"></div>
-      </section>
 
       <section>
         <h2>待核实</h2>

@@ -26,7 +26,7 @@ async function getDefaultStore() {
  */
 export async function runPipeline(cfg = {}, storeOverride = null, engineOverride = null) {
   const store = storeOverride || (await getDefaultStore());
-  const engine = engineOverride || defaultGetEngine(cfg.engine || "demo");
+  const engine = engineOverride || defaultGetEngine(cfg.engine || "openai");
 
   const historyEvents = store.get("events", []);
 
@@ -188,9 +188,6 @@ export async function runPipeline(cfg = {}, storeOverride = null, engineOverride
   }
   store.set("notifications", notifs.slice(0, 500));
 
-  // 更新关注任务状态
-  updateWatchTasks(store, candidates, notifyItems);
-
   // 转换为背包 items
   const items = notifyItems.map((n) => ({
     title: n.bubble || n.fact || "新发现",
@@ -202,7 +199,6 @@ export async function runPipeline(cfg = {}, storeOverride = null, engineOverride
     publishedAt: n.publishedAt || null,
     firstSeenAt: n.firstSeenAt || null,
     reason: n.relevanceReason || "",
-    watchTaskId: n.watchTaskId || "",
     eventId: n.eventId,
     shouldNotify: n.shouldNotify ?? true,
     contentFingerprint: n.contentFingerprint || "",
@@ -245,8 +241,6 @@ export function validateDecisions(decisions, candidates, historyEvents) {
       source_candidate_id: d.source_candidate_id || null,
       published_at: d.published_at || null,
       relevance_reason: d.relevance_reason || null,
-      watch_task_id: d.watch_task_id || null,
-      condition_met: d.condition_met === true,
     });
   }
   return out;
@@ -355,8 +349,6 @@ function buildNotifyItem(event, d, sourceArticle) {
     publishedAt: d.published_at || sourceArticle?.publishedAt || null,
     firstSeenAt: sourceArticle?.firstSeenAt || new Date().toISOString(),
     relevanceReason: d.relevance_reason || "",
-    watchTaskId: sourceArticle?.taskId || "",
-    watchTaskMet: d.condition_met === true && Boolean(d.watch_task_id),
     status: "pending",        // pending → shown → read/favorite/ignored
     createdAt: new Date().toISOString(),
     notifiedAt: null,
@@ -366,27 +358,6 @@ function buildNotifyItem(event, d, sourceArticle) {
       ? (sourceArticle.contentFingerprint || contentFingerprint(sourceArticle.title, sourceArticle.summary || sourceArticle.contentSnippet || ""))
       : "",
   };
-}
-
-/** 更新关注任务状态 */
-function updateWatchTasks(store, candidates, notifyItems) {
-  const tasks = store.get("watchTasks", []);
-  if (!tasks.length) return;
-  let changed = false;
-  const updated = tasks.map((t) => {
-    // 【问题4】只有模型明确判断条件达成（condition_met）才标记完成
-    const hit = notifyItems.find(
-      (n) => n.watchTaskMet && (n.watchTaskId === t.target || n.watchTaskId === t.id)
-    );
-    const patch = { lastCheck: Date.now() };
-    if (hit && t.status === "active") {
-      patch.status = "done";
-      patch.doneAt = Date.now();
-    }
-    if (patch.status || patch.lastCheck !== t.lastCheck) changed = true;
-    return { ...t, ...patch };
-  });
-  if (changed) store.set("watchTasks", updated);
 }
 
 /** 从文本提取事件主体 */

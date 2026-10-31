@@ -16,7 +16,6 @@ async function load() {
   $("interval").value = settings.searchIntervalMinutes || 60;
   $("bubbleLimit").value = settings.dailyBubbleLimit ?? 3;
   $("monthlyLimit").value = settings.monthlyBubbleLimit || 0;
-  $("watchBypass").value = settings.watchBypassLimit ? "yes" : "no";
   $("launchAtLogin").checked = settings.launchAtLogin || false;
   $("quietEnabled").checked = settings.quietHours?.enabled ?? true;
   $("quietStart").value = settings.quietHours?.start || "22:00";
@@ -42,8 +41,7 @@ async function load() {
 
   renderTags();
   renderFeedback();
-  markEngine(settings.engine || "demo");
-  checkEngines();
+  checkEngine();
   refreshPatrolStatus();
   refreshReview();
 }
@@ -95,35 +93,24 @@ function addTag(inputId, list) {
   renderTags();
 }
 
-function markEngine(name) {
-  document.querySelectorAll("#engineRow button").forEach((b) => {
-    const active = b.dataset.engine === name;
-    b.classList.toggle("active", active);
-  });
-  $("apiConfig").classList.toggle("show", name === "openai");
-}
-
-async function checkEngines() {
-  for (const name of ["openai", "demo"]) {
-    const el = $("st-" + name);
-    try {
-      const r = await window.scoutcat.checkEngine(name);
-      const bits = [];
-      if (r.model) bits.push("模型✓");
-      if (r.search) bits.push("搜索✓");
-      el.textContent = r.ok ? bits.join(" ") : `✗ ${r.message || "不可用"}`;
-    } catch {
-      el.textContent = "✗ 检测失败";
-    }
+async function checkEngine() {
+  const el = $("engineStatus");
+  el.textContent = "检测中…";
+  try {
+    const r = await window.scoutcat.checkEngine("openai");
+    const bits = [];
+    if (r.model) bits.push("模型✓");
+    if (r.search) bits.push("搜索✓");
+    el.textContent = r.ok ? bits.join(" ") : `✗ ${r.message || "不可用"}`;
+    el.style.color = r.ok ? "var(--ok, #2e9e5b)" : "var(--err, #c0392b)";
+  } catch {
+    el.textContent = "✗ 检测失败";
+    el.style.color = "var(--err, #c0392b)";
   }
 }
 
 $("interestInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addTag("interestInput", interests); } });
 $("blockInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addTag("blockInput", blocked); } });
-
-document.querySelectorAll("#engineRow button").forEach((b) =>
-  b.addEventListener("click", () => { markEngine(b.dataset.engine); })
-);
 
 $("scale").addEventListener("change", async () => {
   const scale = Number($("scale").value);
@@ -133,24 +120,9 @@ $("scale").addEventListener("change", async () => {
 
 $("playAction").addEventListener("click", () => window.scoutcat.play($("action").value));
 
-$("addWatch").addEventListener("click", async () => {
-  const target = $("watchTarget").value.trim();
-  const condition = $("watchCond").value.trim();
-  if (!target || !condition) { $("watchStatus").textContent = "请填写完整"; return; }
-  await window.scoutcat.addWatch({
-    id: crypto.randomUUID(),
-    target,
-    condition,
-    status: "active",
-    createdAt: Date.now(),
-    lastCheck: null,
-  });
-  $("watchTarget").value = "";
-  $("watchCond").value = "";
-  $("watchStatus").textContent = "已添加关注任务";
-});
-
 $("refreshStatus").addEventListener("click", refreshPatrolStatus);
+
+$("checkEngine").addEventListener("click", checkEngine);
 
 $("clearReview").addEventListener("click", async () => {
   await window.scoutcat.clearReview();
@@ -165,7 +137,6 @@ $("save").addEventListener("click", async () => {
     searchIntervalMinutes: Math.max(15, Number($("interval").value) || 60),
     dailyBubbleLimit: Math.max(0, Number($("bubbleLimit").value) || 0),
     monthlyBubbleLimit: Math.max(0, Number($("monthlyLimit").value) || 0),
-    watchBypassLimit: $("watchBypass").value === "yes",
     launchAtLogin: $("launchAtLogin").checked,
     quietHours: {
       enabled: $("quietEnabled").checked,
@@ -182,7 +153,6 @@ $("save").addEventListener("click", async () => {
     bubbleDurationSec: Math.max(5, Number($("bubbleDuration").value) || 30),
     carouselIntervalSec: Math.max(1, Number($("carouselInterval").value) || 2),
     carouselEnabled: $("carouselEnabled").checked,
-    engine: document.querySelector("#engineRow button.active")?.dataset.engine || "demo",
     openai: {
       baseURL: $("baseUrl").value.trim(),
       apiKey: $("apiKey").value.trim(),

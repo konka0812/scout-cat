@@ -1,6 +1,6 @@
 /**
  * 审核反馈专项验证
- * 验收：同一消息只提醒一次 / 真实新进展才再提醒 / 关注任务不误完成 / 搜索失败不当作没消息
+ * 验收：同一消息只提醒一次 / 真实新进展才再提醒 / 搜索失败不当作没消息
  */
 import { runPipeline } from "./src/common/engines/pipeline.js";
 import { engines } from "./src/common/engines/registry.js";
@@ -9,7 +9,7 @@ let pass = 0, fail = 0;
 const ok = (name, cond) => { if (cond) { pass++; console.log(`  ✓ ${name}`); } else { fail++; console.log(`  ✗ ${name}`); } };
 
 function memStore(initial = {}) {
-  const data = { articles: [], events: [], notifications: [], discoveries: [], watchTasks: [], candidateStatus: [], pendingReview: [], ...initial };
+  const data = { articles: [], events: [], notifications: [], discoveries: [], candidateStatus: [], pendingReview: [], ...initial };
   return { get: (k, d) => (k in data ? data[k] : d), set: (k, v) => { data[k] = v; }, _data: data };
 }
 function mockEngine(candidates, decisions) {
@@ -43,30 +43,6 @@ console.log("\n=== B. 内容变化才重新提醒（真实新进展）===");
   engines.mock = mockEngine([C("c0", "https://a.com/x", "某工具", { summary: "v2.0 全量开放" })], [D(["c0"], "new_event", { fact: "v2.0" })]);
   await runPipeline({ engine: "mock" }, store);
   ok("内容变化后重新提醒", store.get("notifications").length === 2);
-}
-
-console.log("\n=== C. 关注任务不误完成 ===");
-{
-  const store = memStore({ watchTasks: [{ id: "wt1", target: "某项目", condition: "发布 Windows 版", status: "active", createdAt: 1, lastCheck: null }] });
-  // 只搜到 Linux 版，模型判断 condition_met=false
-  engines.mock = mockEngine(
-    [C("c0", "https://a.com/linux", "某项目发布 Linux 版", { taskId: "某项目" })],
-    [D(["c0"], "new_event", { fact: "发布 Linux 版", watch_task_id: "某项目", condition_met: false })]
-  );
-  await runPipeline({ engine: "mock" }, store);
-  const wt = store.get("watchTasks")[0];
-  ok("条件不满足不标记 done", wt.status === "active");
-  ok("但记录了检查时间", !!wt.lastCheck);
-}
-{
-  const store = memStore({ watchTasks: [{ id: "wt1", target: "某项目", condition: "发布 Windows 版", status: "active", createdAt: 1, lastCheck: null }] });
-  // 明确 Windows 版，condition_met=true
-  engines.mock = mockEngine(
-    [C("c0", "https://a.com/win", "某项目发布 Windows 版", { taskId: "某项目" })],
-    [D(["c0"], "new_event", { fact: "发布 Windows 版", watch_task_id: "某项目", condition_met: true })]
-  );
-  await runPipeline({ engine: "mock" }, store);
-  ok("条件满足才标记 done", store.get("watchTasks")[0].status === "done");
 }
 
 console.log("\n=== D. 搜索失败不当作没消息 ===");

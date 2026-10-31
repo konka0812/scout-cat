@@ -13,7 +13,6 @@ export async function runWithEngine(name, cfg) {
   const prompt = buildPatrolPrompt({
     interests: cfg.interests,
     blockedTopics: cfg.blockedTopics,
-    watchTasks: cfg.watchTasks,
     lastCheck: cfg.lastCheck,
     now: new Date().toISOString(),
   });
