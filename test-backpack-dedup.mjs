@@ -143,5 +143,26 @@ console.log("\n=== 8. 判断简介是否为中文 ===");
   ok("空文本不处理", needsChinese("") === false);
 }
 
+console.log("\n=== 9. \u80cc\u5305\u662f\u6700\u7ec8\u51c6\u7ef6 ===");
+{
+  const store = memStore({
+    events: [{ id: "ev1", knownFacts: "\u67d0\u5de5\u5177\u53d1\u5e03", status: "active", relatedArticles: [], subject: "\u67d0\u5de5\u5177" }],
+  });
+  engines.mock = mockEngine(
+    [C("c0", "https://a.com/dup", "\u67d0\u5de5\u5177\u53d1\u5e03\u65b0\u7248", { summary: "\u67d0\u5de5\u5177\u53d1\u5e03" })],
+    [D(["c0"], "duplicate", { fact: "\u67d0\u5de5\u5177\u53d1\u5e03", source_candidate_id: "c0" })]
+  );
+  const r = await runPipeline({ engine: "mock" }, store);
+  ok("\u4e0d\u5728\u80cc\u5305 \u2192 \u91cd\u65b0\u63a8\u51fa", r.items.length === 1);
+  ok("\u8fdb\u80cc\u5305", store.get("discoveries").length === 1);
+
+  engines.mock = mockEngine(
+    [C("c1", "https://a.com/dup", "\u67d0\u5de5\u5177\u53d1\u5e03\u65b0\u7248", { summary: "\u67d0\u5de5\u5177\u53d1\u5e03" })],
+    [D(["c1"], "duplicate", { fact: "\u67d0\u5de5\u5177\u53d1\u5e03", source_candidate_id: "c1" })]
+  );
+  const r2 = await runPipeline({ engine: "mock" }, store);
+  ok("\u80cc\u5305\u91cc\u5df2\u6709 \u2192 \u4e0d\u91cd\u590d\u63a8", r2.items.length === 0);
+}
+
 console.log(`\n========== \u7ed3\u679c: ${pass} \u901a\u8fc7, ${fail} \u5931\u8d25 ==========\n`);
 process.exit(fail > 0 ? 1 : 0);

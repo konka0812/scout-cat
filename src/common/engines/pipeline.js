@@ -62,8 +62,27 @@ export async function runPipeline(cfg = {}, storeOverride = null, engineOverride
   const candidates = freshCandidates;
   const candidateStatus = store.get("candidateStatus", {});
 
+  // 【背包是最终准绳】模型判 duplicate 时，如果这些 URL 都不在背包里，
+  // 说明用户主动删过、或压根没推过 —— 重新当作新发现，不让内部历史挡住。
+  // （背包里确实有的，才是真重复）
+  const backpackUrls = new Set((store.get("discoveries", []) || []).map((d) => d.url).filter(Boolean));
+  const effective = (decisions || []).map((d) => {
+    if (d.classification !== "duplicate") return d;
+    const urls = (d.candidate_ids || [])
+      .map((id) => candidates.find((c) => c.candidateId === id)?.url)
+      .filter(Boolean);
+    if (!urls.length || urls.some((u) => backpackUrls.has(u))) return d;
+    const src = candidates.find((c) => c.candidateId === (d.source_candidate_id || d.candidate_ids[0]));
+    return {
+      ...d,
+      classification: "new_event",
+      source_candidate_id: d.source_candidate_id || d.candidate_ids[0],
+      bubble: d.bubble || d.fact || src?.title || "",
+    };
+  });
+
   // 校验 + 处理 decisions
-  const validated = validateDecisions(decisions, candidates, historyEvents);
+  const validated = validateDecisions(effective, candidates, historyEvents);
 
   // 处理分类：创建/更新事件，生成通知
   const notifyItems = [];
