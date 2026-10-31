@@ -1,0 +1,24 @@
+{
+  "name": "scout-cat",
+  "version": "0.1.0",
+  "description": "情报猎猫 - AI 情报桌面宠物",
+  "private": true,
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron .",
+    "gen:character": "node scripts/gen-assets.mjs character longcat.png character-base.png",
+    "gen:sheets": "node scripts/gen-sheets.mjs",
+    "prestart": "electron-vite build"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-vite": "^2.3.0",
+    "vite": "^5.4.10"
+  }
+}

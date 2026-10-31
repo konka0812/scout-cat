@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'" />
+    <title>发现背包</title>
+    <style>
+      :root {
+        --bg: #fffdf8;
+        --ink: #3a2f28;
+        --muted: #a08d7c;
+        --line: #ece2d5;
+        --accent: #ff7a59;
+        --accent-soft: #fff0ea;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font: 14px/1.6 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+      }
+      header {
+        padding: 16px 18px 12px;
+        border-bottom: 1px solid var(--line);
+        background: #fffaf2;
+      }
+      header h1 { margin: 0; font-size: 16px; }
+      header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+      .tabs { display: flex; gap: 6px; padding: 12px 18px 0; }
+      .tabs button {
+        flex: 1;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        padding: 8px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+      #list { padding: 12px 18px 18px; overflow-y: auto; height: calc(100vh - 175px); }
+      .toolbar { display: flex; gap: 8px; padding: 10px 18px 0; align-items: center; }
+      .toolbar button { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; color: var(--ink); }
+      .toolbar button.danger { color: #c0392b; }
+      .toolbar .unread-count { font-size: 11px; color: var(--muted); white-space: nowrap; }
+      .item.unread { border-left: 3px solid var(--accent); }
+      .item .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 6px; }
+      .item {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      .item .title { font-weight: 600; font-size: 14px; }
+      .item .summary {
+        color: #5c4f45;
+        font-size: 13px;
+        margin-top: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .item .meta { color: var(--muted); font-size: 11px; margin-top: 6px; }
+      .item .actions { display: flex; gap: 8px; margin-top: 8px; }
+      .item .actions button {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 8px;
+        padding: 4px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .item .actions button.primary { background: var(--accent-soft); border-color: #ffd9cc; color: #d9562b; }
+      .item .actions button.danger { color: #c0392b; }
+      .item.fav { border-color: #ffd9cc; background: #fffaf6; }
+      .item.muted { opacity: 0.55; }
+      .item .actions button.on { background: var(--accent-soft); border-color: #ffd9cc; color: #d9562b; }
+      .empty { color: var(--muted); text-align: center; padding: 40px 0; font-size: 13px; }
+      .watch-item { display: flex; justify-content: space-between; align-items: center; }
+      .watch-item .info { flex: 1; }
+      .watch-item .status { font-size: 11px; color: var(--muted); }
+      .watch-item button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>发现背包</h1>
+      <div class="sub">猎猫帮你带回来的东西</div>
+    </header>
+    <div class="tabs">
+      <button data-tab="new" class="active">新发现</button>
+      <button data-tab="fav">已收藏</button>
+      <button data-tab="watch">正在关注</button>
+      <button data-tab="review">待核实</button>
+    </div>
+    <div class="toolbar">
+      <button id="markAllRead">全部已阅</button>
+      <button id="removeRead">删除已阅</button>
+      <button id="clearAll" class="danger">清空</button>
+      <span class="unread-count" id="unreadCount"></span>
+    </div>
+    <div id="list"></div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

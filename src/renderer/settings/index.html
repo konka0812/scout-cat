@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'" />
+    <title>设置</title>
+    <style>
+      :root {
+        --bg: #fffdf8;
+        --ink: #3a2f28;
+        --muted: #a08d7c;
+        --line: #ece2d5;
+        --accent: #ff7a59;
+        --accent-soft: #fff0ea;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font: 14px/1.6 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+      header { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); background: #fffaf2; }
+      header h1 { margin: 0; font-size: 16px; }
+      .wrap { padding: 16px 18px 24px; overflow-y: auto; height: calc(100vh - 62px); }
+      section { margin-bottom: 22px; }
+      section h2 { font-size: 13px; color: var(--muted); margin: 0 0 10px; font-weight: 600; letter-spacing: 0.3px; }
+      label { display: block; font-size: 13px; margin-bottom: 6px; color: #5c4f45; }
+      input[type="text"], input[type="number"], select {
+        width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: #fff; color: var(--ink);
+      }
+      .row { display: flex; gap: 10px; }
+      .row > * { flex: 1; }
+      .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+      .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .tag { background: var(--accent-soft); color: #d9562b; border-radius: 999px; padding: 3px 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+      .tag button { background: none; border: none; color: inherit; cursor: pointer; font-size: 13px; padding: 0; }
+      .check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 8px; }
+      .check input { width: auto; }
+      .engine { display: flex; gap: 8px; }
+      .engine button { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px; cursor: pointer; font-size: 13px; color: var(--ink); }
+      .engine button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .engine .st { display: block; font-size: 11px; margin-top: 4px; opacity: 0.8; }
+      .hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+      .actions { display: flex; gap: 10px; margin-top: 8px; }
+      .actions button { flex: 1; border: none; border-radius: 10px; padding: 10px; font-size: 13px; cursor: pointer; }
+      .actions .primary { background: var(--accent); color: #fff; }
+      .actions .ghost { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+      .watch-form { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: #fff; }
+      .api-config { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: #fff; margin-top: 10px; display: none; }
+      .api-config.show { display: block; }
+      .status { font-size: 12px; color: var(--muted); margin-top: 8px; }
+      details.advanced { border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 10px 12px; margin-bottom: 22px; }
+      details.advanced summary { font-size: 13px; font-weight: 600; color: #5c4f45; cursor: pointer; }
+      details.advanced[open] summary { margin-bottom: 8px; }
+      .status-card { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; font-size: 12px; }
+      .status-card .line { display: flex; justify-content: space-between; padding: 2px 0; }
+      .status-card .line b { font-weight: 600; }
+      .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; }
+      .badge.ok { background: #e6f7e9; color: #1a7f37; }
+      .badge.err { background: #fde8e8; color: #c0392b; }
+      .badge.warn { background: #fff4e5; color: #b7791f; }
+      .fb-list { font-size: 12px; color: #5c4f45; }
+      .fb-list .row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+    </style>
+  </head>
+  <body>
+    <header><h1>设置</h1></header>
+    <div class="wrap">
+      <section>
+        <h2>巡逻状态</h2>
+        <div class="status-card" id="patrolStatus">
+          <div class="line"><span>状态</span><b id="ps-state">—</b></div>
+          <div class="line"><span>上次运行</span><b id="ps-last">—</b></div>
+          <div class="line"><span>全屏/专注</span><b id="ps-fs">—</b></div>
+          <div class="line"><span>积压气泡</span><b id="ps-pending">0</b></div>
+          <div class="line"><span>错误</span><b id="ps-err">—</b></div>
+        </div>
+        <div class="actions">
+          <button class="ghost" id="refreshStatus">刷新</button>
+          <button class="ghost" id="runNow">立即巡逻一次</button>
+        </div>
+        <div class="status" id="status"></div>
+      </section>
+
+      <section>
+        <h2>基本</h2>
+        <label>宠物名字</label>
+        <input type="text" id="petName" />
+        <div class="row" style="margin-top: 10px">
+          <div>
+            <label>检查频率（分钟）</label>
+            <input type="number" id="interval" min="15" max="1440" />
+          </div>
+          <div>
+            <label>每日最多弹气泡（条，0=不限）</label>
+            <input type="number" id="bubbleLimit" min="0" max="100" />
+            <div class="hint">新发现主动弹出的上限；达到后其余进背包，不会丢。未读轮播不发在此限制内。</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 10px">
+          <div>
+            <label>搜索范围</label>
+            <select id="searchRange">
+              <option value="today">只看今天</option>
+              <option value="week">近 7 天</option>
+            </select>
+          </div>
+          <div>
+            <label>GitHub 每次推荐几个</label>
+            <input type="number" id="githubMaxItems" min="1" max="5" value="3" />
+            <div class="hint">每次巡逻从 GitHub 今日热榜推荐的仓库个数，背包里已有的会自动跳过。</div>
+          </div>
+        </div>
+        <div class="check"><input type="checkbox" id="githubRecommend" checked /><span>每次巡逻推荐 GitHub 今日热榜项目</span></div>
+      </section>
+
+      <details class="advanced">
+        <summary>高级设置</summary>
+        <div class="row" style="margin-top: 10px">
+          <div>
+            <label>每月提醒上限（0=不限）</label>
+            <input type="number" id="monthlyLimit" min="0" max="500" />
+          </div>
+          <div>
+            <label>关注任务突破上限</label>
+            <select id="watchBypass"><option value="no">不允许</option><option value="yes">允许</option></select>
+          </div>
+        </div>
+        <div class="check"><input type="checkbox" id="launchAtLogin" /><span>开机自动启动</span></div>
+        <div class="row" style="margin-top: 10px">
+          <div>
+            <label>气泡显示时长（秒）</label>
+            <input type="number" id="bubbleDuration" min="5" max="120" />
+          </div>
+          <div>
+            <label>气泡间隔（秒，1=几乎不停）</label>
+            <input type="number" id="carouselInterval" min="1" max="10" value="2" />
+          </div>
+        </div>
+        <div class="check"><input type="checkbox" id="carouselEnabled" checked /><span>有未读时持续随机轮播气泡（没有未读自动停）</span></div>
+      </details>
+
+      <section>
+        <h2>兴趣与屏蔽</h2>
+        <label>关注兴趣（回车添加）</label>
+        <input type="text" id="interestInput" placeholder="例如：AI 视频、开源工具" />
+        <div class="tags" id="interestTags"></div>
+        <label style="margin-top: 12px">屏蔽主题（回车添加）</label>
+        <input type="text" id="blockInput" placeholder="例如：融资新闻" />
+        <div class="tags" id="blockTags"></div>
+      </section>
+
+      <section>
+        <h2>免打扰</h2>
+        <div class="check"><input type="checkbox" id="quietEnabled" /><span>启用免打扰时段</span></div>
+        <div class="row">
+          <input type="text" id="quietStart" value="22:00" />
+          <input type="text" id="quietEnd" value="08:00" />
+        </div>
+      </section>
+
+      <section>
+        <h2>偏好反馈</h2>
+        <div class="fb-list" id="fbList"><div class="hint">暂无反馈记录</div></div>
+        <div class="hint">收藏和"少看这类"会自动记录，用于调整后续推荐。</div>
+      </section>
+
+      <section>
+        <h2>执行引擎</h2>
+        <div class="engine" id="engineRow">
+          <button data-engine="openai">OpenAI 兼容 + 搜索<span class="st" id="st-openai">检测中…</span></button>
+          <button data-engine="demo">演示模式<span class="st" id="st-demo">✓ 可用</span></button>
+        </div>
+        <div class="hint">OpenAI 兼容接口自行填写，搜索使用 DeepSeek Search/Fetch。</div>
+        <div class="api-config" id="apiConfig">
+          <label>Base URL</label>
+          <input type="text" id="baseUrl" placeholder="https://api.deepseek.com/v1" />
+          <label style="margin-top: 8px">API Key</label>
+          <input type="text" id="apiKey" />
+          <label style="margin-top: 8px">Model</label>
+          <input type="text" id="model" placeholder="deepseek-chat" />
+          <label style="margin-top: 8px">DeepSeek Search Key（用于搜索，默认复用 API Key）</label>
+          <input type="text" id="searchKey" placeholder="留空则复用 API Key" />
+          <label style="margin-top: 8px">Search Base URL</label>
+          <input type="text" id="searchBase" placeholder="https://api.deepseek.com" />
+        </div>
+      </section>
+
+      <details class="advanced">
+        <summary>高级搜索参数</summary>
+        <div class="row" style="margin-top: 10px">
+          <div>
+            <label>每次查询数</label>
+            <input type="number" id="queryCount" min="1" max="5" />
+          </div>
+          <div>
+            <label>单次 Fetch 上限</label>
+            <input type="number" id="fetchLimit" min="0" max="12" />
+          </div>
+          <div>
+            <label>事件保存（天）</label>
+            <input type="number" id="retention" min="1" max="90" />
+          </div>
+        </div>
+        <div class="check"><input type="checkbox" id="jsonMode" checked /><span>模型 JSON Output 模式（提升解析稳定性）</span></div>
+      </details>
+
+      <section>
+        <h2>关注任务</h2>
+        <div class="watch-form">
+          <label>盯着谁 / 什么</label>
+          <input type="text" id="watchTarget" placeholder="例如：某开源项目" />
+          <label style="margin-top: 8px">达成条件</label>
+          <input type="text" id="watchCond" placeholder="例如：发布 Windows 版" />
+          <div class="actions">
+            <button class="primary" id="addWatch">添加关注</button>
+          </div>
+        </div>
+        <div class="status" id="watchStatus"></div>
+      </section>
+
+      <section>
+        <h2>待核实</h2>
+        <div class="status" id="reviewInfo">加载中…</div>
+        <div class="actions">
+          <button class="ghost" id="clearReview">清空待核实</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>宠物外观</h2>
+        <label>缩放</label>
+        <select id="scale">
+          <option value="0.5">小</option>
+          <option value="1" selected>标准</option>
+          <option value="1.5">大</option>
+          <option value="2">特大</option>
+        </select>
+        <label style="margin-top: 10px">测试动作</label>
+        <select id="action">
+          <option value="idle">待机</option>
+          <option value="sleep">睡觉</option>
+          <option value="walk">行走</option>
+          <option value="discover">发现</option>
+          <option value="deliver">报信</option>
+          <option value="pet">被摸</option>
+        </select>
+        <div class="actions">
+          <button class="ghost" id="playAction">测试动作</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="actions">
+          <button class="primary" id="save">保存设置</button>
+        </div>
+        <div class="status" id="saveStatus"></div>
+      </section>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

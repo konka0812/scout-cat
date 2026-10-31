@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-P" content="default-src 'self'; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'" />
+    <title>欢迎使用情报猎猫</title>
+    <style>
+      :root {
+        --bg: #fffdf8;
+        --ink: #3a2f28;
+        --muted: #a08d7c;
+        --line: #ece2d5;
+        --accent: #ff7a59;
+        --accent-soft: #fff0ea;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font: 14px/1.6 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+      .wrap { max-width: 420px; margin: 0 auto; padding: 28px 24px 20px; }
+      .logo { text-align: center; margin-bottom: 18px; }
+      .logo img { width: 96px; height: 96px; }
+      h1 { font-size: 20px; text-align: center; margin: 0 0 4px; }
+      .sub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+      .step { display: none; }
+      .step.active { display: block; }
+      label { display: block; font-size: 13px; margin-bottom: 6px; color: #5c4f45; }
+      input[type="text"] { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: #fff; color: var(--ink); }
+      .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+      .preset { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: var(--ink); }
+      .preset.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+      .actions { display: flex; gap: 10px; margin-top: 20px; }
+      .actions button { flex: 1; border: none; border-radius: 10px; padding: 11px; font-size: 13px; cursor: pointer; }
+      .actions .primary { background: var(--accent); color: #fff; }
+      .actions .ghost { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+      .dots { display: flex; gap: 6px; justify-content: center; margin-top: 18px; }
+      .dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+      .dots span.active { background: var(--accent); }
+      .test-row { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+      .test-row .st { font-size: 12px; color: var(--muted); }
+      .ok { color: #1a7f37; }
+      .err { color: #c0392b; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="logo"><img src="assets/pet/character-base.png" alt="猎猫" onerror="this.style.display='none'" /></div>
+      <h1>欢迎使用情报猎猫</h1>
+      <div class="sub">让一只小猫帮你留意值得关注的新消息</div>
+
+      <div class="step active" data-step="0">
+        <label>给宠物起个名字</label>
+        <input type="text" id="petName" value="猎猫" maxlength="12" />
+        <div class="hint">名字会显示在托盘和设置里。</div>
+      </div>
+
+      <div class="step" data-step="1">
+        <label>你关注什么？（点选，可多选）</label>
+        <div class="presets" id="presets"></div>
+        <label style="margin-top: 14px">自定义兴趣（回车添加）</label>
+        <input type="text" id="customInterest" placeholder="例如：AI 视频、开源工具" />
+        <div class="hint">之后可以在「设置」里随时调整。</div>
+      </div>
+
+      <div class="step" data-step="2">
+        <label>DeepSeek API Key</label>
+        <input type="text" id="apiKey" placeholder="sk-..." />
+        <label style="margin-top: 12px">API Base URL</label>
+        <input type="text" id="baseUrl" value="https://api.deepseek.com/v1" />
+        <label style="margin-top: 12px">模型</label>
+        <input type="text" id="model" value="deepseek-chat" />
+        <div class="test-row">
+          <button class="ghost" id="testBtn" style="padding:7px 12px">测试连接</button>
+          <span class="st" id="testResult">未测试</span>
+        </div>
+        <div class="hint">Key 只保存在本机。也可先到「设置」里用演示模式体验。</div>
+      </div>
+
+      <div class="step" data-step="3">
+        <p style="font-size:13px;color:#5c4f45">搞定！猎猫会开始定时巡逻，把值得了解的新发现带回来。</p>
+        <p style="font-size:12px;color:var(--muted)">首次巡逻会回看最近 48 小时的信息，之后按你设置的频率运行。没有值得推荐的内容时，它会安静待着。</p>
+      </div>
+
+      <div class="actions">
+        <button class="ghost" id="prevBtn">上一步</button>
+        <button class="primary" id="nextBtn">下一步</button>
+      </div>
+      <div class="dots" id="dots"></div>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
