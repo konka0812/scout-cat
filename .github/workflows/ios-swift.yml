@@ -38,8 +38,10 @@ jobs:
         working-directory: ios
         run: xcodegen generate
       - name: 编译 iOS App（模拟器）
+        working-directory: ios
         run: |
-          cd ios
+          ls -la ScoutCat.xcodeproj
+          xcodebuild -list -project ScoutCat.xcodeproj
           xcodebuild -project ScoutCat.xcodeproj \
             -scheme ScoutCat \
             -sdk iphonesimulator \
