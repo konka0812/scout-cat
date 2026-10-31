@@ -4,7 +4,3 @@ dist/
 app.log
 *.log
 .DS_Store
-ios/.build/
-ios/**/*.xcodeproj/
-ios/**/*.xcworkspace/
-ios/DerivedData/
