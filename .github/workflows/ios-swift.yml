@@ -12,7 +12,7 @@ on:
 
 jobs:
   core:
-    name: Swift 核心包
+    name: Swift 核心包（编译 + 测试）
     runs-on: macos-14
     timeout-minutes: 20
     steps:
@@ -28,24 +28,21 @@ jobs:
 
   app:
     name: iOS App + Widget 编译
-    # macos-15 自带 Xcode 16，能读 objectVersion 77（xcodegen 生成的格式）
+    # macos-15 自带 Xcode 16，能读 xcodegen 生成的 objectVersion 77
     runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - name: 查看 Xcode 版本
+      - name: Xcode 版本
         run: xcodebuild -version
       - name: 安装 xcodegen
         run: brew install xcodegen
       - name: 生成 Xcode 工程
         working-directory: ios
         run: xcodegen generate
-      - name: 编译 iOS App（模拟器）
+      - name: 编译 iOS App + Widget（模拟器）
         working-directory: ios
         run: |
-          plutil -lint ScoutCat.xcodeproj/project.pbxproj
-          head -30 ScoutCat.xcodeproj/project.pbxproj
-          xcodebuild -list -project ScoutCat.xcodeproj 2>&1 | head -40
           xcodebuild -project ScoutCat.xcodeproj \
             -scheme ScoutCat \
             -sdk iphonesimulator \
@@ -53,3 +50,10 @@ jobs:
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ScoutCat-simulator-build
+          path: ios/build/Build/Products/Debug-iphonesimulator/
+          if-no-files-found: ignore
