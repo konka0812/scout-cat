@@ -11,20 +11,39 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-test:
-    # macOS runner 自带 Xcode + Swift 工具链
+  core:
+    name: Swift 核心包
     runs-on: macos-14
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-
-      - name: Show Swift version
+      - name: Swift 版本
         run: swift --version
-
-      - name: Build core package
+      - name: 编译核心包
         working-directory: ios
         run: swift build
-
-      - name: Run tests
+      - name: 运行测试
         working-directory: ios
         run: swift test
+
+  app:
+    name: iOS App + Widget 编译
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装 xcodegen
+        run: brew install xcodegen
+      - name: 生成 Xcode 工程
+        working-directory: ios
+        run: xcodegen generate
+      - name: 编译 iOS App（模拟器）
+        run: |
+          cd ios
+          xcodebuild -project ScoutCat.xcodeproj \
+            -scheme ScoutCat \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build
