@@ -56,6 +56,20 @@ app.whenReady().then(async () => {
   app.setLoginItemSettings({ openAtLogin: store.get("settings.launchAtLogin") || false });
 
   petWindow = new PetWindow({ scale: store.get("pet.scale") || 1 });
+  // 光标在猫身上时才接收鼠标事件；移开就恢复穿透，不挡下面的窗口。
+  // 之前靠渲染层 mousemove 判断，光标静止时不会触发，导致按下去没反应。
+  setInterval(() => {
+    if (!petWindow) return;
+    if (petWindow.bubbleVisible) return;      // 气泡显示时保持可点
+    const rect = petWindow.hitRect;
+    if (!rect) return;
+    const b = petWindow.getBounds();
+    const p = screen.getCursorScreenPoint();
+    const inside = p.x >= b.x + rect.x && p.x < b.x + rect.x + rect.w &&
+                   p.y >= b.y + rect.y && p.y < b.y + rect.y + rect.h;
+    if (process.env.PET_DEBUG) console.log("[pet] cursor", p.x, p.y, "win", b.x, b.y, "rect", JSON.stringify(rect), "inside", inside);
+    petWindow.applyClickThrough(!inside);
+  }, 50);
   createTray({ openBackpack, openSettings, runNow: () => scheduler?.runNow() });
   scheduler = new Scheduler({ petWindow });
   scheduler.start();
@@ -210,6 +224,7 @@ function registerIpc() {
   ipcMain.handle("pet:move", (_e, x, y) => petWindow?.moveTo(x, y));
   ipcMain.handle("pet:getBounds", () => petWindow?.getBounds());
   ipcMain.handle("pet:resize", (_e, scale) => petWindow?.setScale(scale));
+  ipcMain.handle("pet:setHitRect", (_e, rect) => petWindow?.setHitRect(rect));
   ipcMain.handle("pet:dock", () => {
     // 边缘停靠：主进程判断靠近哪条边并吸附
     if (!petWindow) return null;

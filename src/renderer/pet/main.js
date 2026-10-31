@@ -67,6 +67,8 @@ async function init() {
 
   // 素材缺失就跳过该动作，不回退到别的图
   for (const a of ACTIONS) loadSheet(a);
+  reportHitRect();
+  window.addEventListener("resize", reportHitRect);
   loadBubbleConfig();
   requestAnimationFrame(loop);
   setupInteraction();
@@ -202,8 +204,10 @@ function play(action) {
 
 function hitTest(x, y) {
   const rect = canvas.getBoundingClientRect();
-  const px = x - rect.left;
-  const py = y - rect.top;
+  // canvas.width/height 是设备像素（×dpr），而 clientX/Y 是 CSS 像素
+  const dpr = window.devicePixelRatio || 1;
+  const px = (x - rect.left) * dpr;
+  const py = (y - rect.top) * dpr;
   if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) return false;
   try {
     const d = ctx.getImageData(Math.floor(px), Math.floor(py), 1, 1).data;
@@ -211,6 +215,20 @@ function hitTest(x, y) {
   } catch {
     return true;
   }
+}
+
+/** 把猫的碰撞矩形（窗口内 CSS 坐标）报给主进程，用于判断光标是否在身上 */
+function reportHitRect() {
+  const W = canvas.clientWidth || 320;
+  const H = canvas.clientHeight || 381;
+  const size = spriteSize(W, H);
+  const rect = {
+    x: (W - size) / 2,
+    y: H - size - H * 0.08,
+    w: size,
+    h: size + H * 0.08,
+  };
+  try { window.scoutcat.setHitRect(rect); } catch { /* 忽略 */ }
 }
 
 async function refreshBounds() {
@@ -223,14 +241,8 @@ async function refreshBounds() {
 
 function setupInteraction() {
   document.addEventListener("mousemove", (e) => {
-    if (dragging) {
-      window.scoutcat.movePet(e.screenX - dragOffset.x, e.screenY - dragOffset.y);
-      return;
-    }
-    const now = performance.now();
-    if (now - hitThrottle < 40) return;
-    hitThrottle = now;
-    window.scoutcat.setClickThrough(!hitTest(e.clientX, e.clientY));
+    if (!dragging) return;
+    window.scoutcat.movePet(e.screenX - dragOffset.x, e.screenY - dragOffset.y);
   });
 
   document.addEventListener("mousedown", async (e) => {
@@ -239,7 +251,6 @@ function setupInteraction() {
     dragging = true;
     dragOffset.x = e.screenX - (winBounds?.x ?? 0);
     dragOffset.y = e.screenY - (winBounds?.y ?? 0);
-    window.scoutcat.setClickThrough(false);
     play("walk");
   });
 
@@ -247,7 +258,6 @@ function setupInteraction() {
     if (!dragging) return;
     dragging = false;
     await refreshBounds();
-    window.scoutcat.setClickThrough(true);
     play("pet");
     // 边缘停靠：靠近屏幕边缘时由主进程自动吸附
     try {
@@ -255,14 +265,9 @@ function setupInteraction() {
     } catch { /* 停靠失败忽略 */ }
   });
 
-  document.addEventListener("mouseleave", () => {
-    if (!dragging) window.scoutcat.setClickThrough(true);
-  });
-
   // 双击 → 打开背包
   document.addEventListener("dblclick", (e) => {
     if (!hitTest(e.clientX, e.clientY)) return;
-    window.scoutcat.setClickThrough(false);
     window.scoutcat.openBackpack();
   });
 
@@ -270,7 +275,6 @@ function setupInteraction() {
   document.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     if (!hitTest(e.clientX, e.clientY)) return;
-    window.scoutcat.setClickThrough(false);
     window.scoutcat.openSettings();
   });
 }

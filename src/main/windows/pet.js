@@ -66,6 +66,18 @@ export class PetWindow {
   setClickThrough(ignore) {
     this.win.setIgnoreMouseEvents(ignore, { forward: true });
   }
+
+  /** 记录猫在窗口内的碰撞矩形（CSS 坐标），由渲染层上报 */
+  setHitRect(rect) {
+    this.hitRect = rect ? { x: rect.x, y: rect.y, w: rect.w, h: rect.h } : null;
+  }
+
+  /** 按状态切换穿透，避免每次轮询都发 IPC */
+  applyClickThrough(ignore) {
+    if (this._ignore === ignore) return;
+    this._ignore = ignore;
+    this.setClickThrough(ignore);
+  }
   moveTo(x, y) {
     this.win.setPosition(Math.round(x), Math.round(y), false);
   }
