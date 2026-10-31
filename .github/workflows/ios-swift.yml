@@ -13,7 +13,8 @@ on:
 jobs:
   core:
     name: Swift 核心包（编译 + 测试）
-    runs-on: macos-14
+    # macOS 14 runner 镜像 2026-11-02 退役
+    runs-on: macos-15
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
