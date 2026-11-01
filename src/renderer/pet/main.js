@@ -18,11 +18,18 @@ const FRAME_RATIO = FRAME_NATURAL / BASE_WIN_W;
 /** 精灵表单元原始尺寸（1024/5） */
 const CELL = 205;
 
-/** 统一缩放系数：原始格子 -> 渲染尺寸。
+/**
+ * 归一化后的内容高度。
+ * 素材每帧内容高度在 135~146 之间浮动，统一到这个值后帧间不再有大小变化。
+ * cellScale 的分母同步改成 220，保证猫的整体尺寸和归一化前一致。
+ */
+const normalizeHeight = 150;
+
+/** 统一缩放系数：归一化后的内容 -> 渲染尺寸。
  *  所有帧共用同一个系数，猫的大小变化完全来自素材本身，
  *  不会因为逐帧裁切而出现额外的缩放感。 */
 function cellScale() {
-  return Math.max(0.2, (petArea.h - 16) / CELL);
+  return Math.max(0.2, (petArea.h - 16) / (normalizeHeight / 0.68));
 }
 
 // ===== 动画配置 =====
@@ -159,12 +166,25 @@ async function loadSheet(action) {
 
   // 整张表共用一个内容矩形：保证 25 帧尺寸/比例一致
   const rect = unionRect(src, GRID);
+  // 再归一化：把每帧内容缩放到统一高度并居中，消除帧间大小差
+  const normH = normalizeHeight;
+  const norm = (cell) => {
+    const c = cropRect(cell, rect);
+    const b = c.content;
+    if (!b || b.h <= 0) return c;
+    const w = Math.max(1, Math.round(b.w * normH / b.h));
+    const out = document.createElement("canvas");
+    out.width = w;
+    out.height = normH;
+    out.getContext("2d").drawImage(c.canvas, b.left, b.top, b.w, b.h, 0, 0, w, normH);
+    return { canvas: out, left: 0, top: 0, content: { left: 0, top: 0, w, h: normH } };
+  };
   if (cfg.mode === "prog") {
     // 程序动画：只取第 0 帧，但用同一矩形，尺寸与精灵表一致
-    sheets[action] = cropRect(sheetCell(src, 0), rect);
+    sheets[action] = norm(sheetCell(src, 0));
   } else {
     const frames = [];
-    for (let i = 0; i < GRID * GRID; i++) frames.push(cropRect(sheetCell(src, i), rect));
+    for (let i = 0; i < GRID * GRID; i++) frames.push(norm(sheetCell(src, i)));
     sheets[action] = frames;
   }
   singleFrame[action] = cfg.mode === "prog";
