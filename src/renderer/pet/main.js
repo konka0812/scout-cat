@@ -65,7 +65,11 @@ function cropRect(canvas, rect) {
   c.width = rect.w;
   c.height = rect.h;
   c.getContext("2d").drawImage(canvas, rect.left, rect.top, rect.w, rect.h, 0, 0, rect.w, rect.h);
-  return { canvas: c, left: rect.left, top: rect.top };
+  // 内容在裁切后画布里的位置：用于按内容中心对齐，消除帧间上下跳动
+  const b = bboxOf(c);
+  const content = b ? { left: b.left, top: b.top, w: b.right - b.left + 1, h: b.bottom - b.top + 1 }
+                    : { left: 0, top: 0, w: rect.w, h: rect.h };
+  return { canvas: c, left: rect.left, top: rect.top, content };
 }
 
 /** 整张精灵表共用的内容矩形：25 帧内容并集 */
@@ -170,14 +174,21 @@ async function loadSheet(action) {
 
 /** 把一帧画到窗口里：内容中心对准窗口水平中心，底边贴住窗口底部。
  *  缩放系数对所有帧一致，位置用该帧在格子里的真实偏移。 */
+/**
+ * 把一帧画到窗口里。
+ * 按「内容中心」对齐到宠物区中心：内容在格子里的位置每帧不同，
+ * 按底边或顶边对齐都会让猫一帧帧上下跳。
+ */
 function drawCatFrame(frame, winW, winH, scale = cellScale()) {
   const img = frame.canvas;
+  const c = frame.content;
   const w = img.width * scale;
   const h = img.height * scale;
-  const centerX = (frame.left + img.width / 2) * scale;
-  const bottom = (frame.top + img.height) * scale;
-  const x = winW / 2 - centerX;
-  const y = winH - 8 - bottom;
+  const contentCX = (frame.left + c.left + c.w / 2) * scale;
+  const contentCY = (frame.top + c.top + c.h / 2) * scale;
+  const targetCY = winH - petArea.h / 2;   // 宠物区垂直中心
+  const x = winW / 2 - contentCX;
+  const y = targetCY - contentCY;
   ctx.drawImage(img, x, y, w, h);
   return { x, y, w, h };
 }
@@ -313,9 +324,12 @@ function reportHitRect() {
   const scale = cellScale();
   const w = first.canvas.width * scale;
   const h = first.canvas.height * scale;
+  const c = first.content;
+  const contentCX = (first.left + c.left + c.w / 2) * scale;
+  const contentCY = (first.top + c.top + c.h / 2) * scale;
   const rect = {
-    x: winW / 2 - (first.left + first.canvas.width / 2) * scale,
-    y: winH - 8 - (first.top + first.canvas.height) * scale,
+    x: winW / 2 - contentCX,
+    y: winH - petArea.h / 2 - contentCY,
     w,
     h,
   };
