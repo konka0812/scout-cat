@@ -137,6 +137,11 @@ npm start          # 自动先 build，再启动
     └── test-backpack-dedup.mjs              背包去重专项（33 例）
 ```
 
+```
+scripts/
+└── gen-sheets.mjs    重新生成六个动作的 5×5 精灵图（需 IMAGE_API_KEY）
+```
+
 ---
 
 ## 工作原理
