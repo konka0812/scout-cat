@@ -4,3 +4,4 @@ dist/
 app.log
 *.log
 .DS_Store
+scout-cat-app.zip
