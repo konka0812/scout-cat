@@ -15,9 +15,14 @@ const FRAME_NATURAL = 205;
 const BASE_WIN_W = 320;
 const FRAME_RATIO = FRAME_NATURAL / BASE_WIN_W;
 
-/** 猫的渲染高度：宠物区高度 - 上下固定边距 */
-function spriteHeight() {
-  return Math.max(24, petArea.h - 16);
+/** 精灵表单元原始尺寸（1024/5） */
+const CELL = 205;
+
+/** 统一缩放系数：原始格子 -> 渲染尺寸。
+ *  所有帧共用同一个系数，猫的大小变化完全来自素材本身，
+ *  不会因为逐帧裁切而出现额外的缩放感。 */
+function cellScale() {
+  return Math.max(0.2, (petArea.h - 16) / CELL);
 }
 
 // ===== 动画配置 =====
@@ -32,8 +37,8 @@ const ANIM = {
   pet:      { mode: "sheet" },
 };
 
-/** 裁掉画布周围的透明留白，返回紧贴内容的画布 */
-function trim(canvas, threshold = 24) {
+/** 内容包围盒（无内容返回 null） */
+function bboxOf(canvas, threshold = 24) {
   const w = canvas.width, h = canvas.height;
   const d = canvas.getContext("2d").getImageData(0, 0, w, h).data;
   let top = -1, bottom = -1, left = -1, right = -1;
@@ -47,39 +52,55 @@ function trim(canvas, threshold = 24) {
       }
     }
   }
-  if (top < 0) return canvas;
-  const c = document.createElement("canvas");
-  c.width = right - left + 1;
-  c.height = bottom - top + 1;
-  c.getContext("2d").drawImage(canvas, left, top, c.width, c.height, 0, 0, c.width, c.height);
-  return c;
+  return top < 0 ? null : { left, top, right, bottom };
 }
 
-/** 裁切精灵表第 0 帧并去掉留白，作为程序动画的单帧源 */
-function cropFrame(img, grid = GRID) {
-  const w = Math.round((img.naturalWidth || img.width) / grid);
-  const h = Math.round((img.naturalHeight || img.height) / grid);
+/**
+ * 按给定矩形裁切。
+ * 所有帧共用同一个矩形，才能保证尺寸和宽高比一致——
+ * 逐帧各自裁切会让每帧大小不同，按统一尺寸绘制时就产生了假的缩放感。
+ */
+function cropRect(canvas, rect) {
   const c = document.createElement("canvas");
-  c.width = w; c.height = h;
-  // 9 参数：源 (0,0,w,h) → 目标 (0,0,w,h)，才是裁切；3 参数是缩放（错误）
-  c.getContext("2d").drawImage(img, 0, 0, w, h, 0, 0, w, h);
-  return trim(c);
+  c.width = rect.w;
+  c.height = rect.h;
+  c.getContext("2d").drawImage(canvas, rect.left, rect.top, rect.w, rect.h, 0, 0, rect.w, rect.h);
+  return { canvas: c, left: rect.left, top: rect.top };
 }
 
-/** 精灵表逐帧裁切并去留白 */
-function cropSheet(img, grid = GRID) {
+/** 整张精灵表共用的内容矩形：25 帧内容并集 */
+function unionRect(img, grid = GRID) {
   const fw = Math.round((img.naturalWidth || img.width) / grid);
   const fh = Math.round((img.naturalHeight || img.height) / grid);
-  const frames = [];
+  let L = fw, T = fh, R = -1, B = -1;
   for (let i = 0; i < grid * grid; i++) {
-    const col = i % grid;
-    const row = Math.floor(i / grid);
+    const col = i % grid, row = Math.floor(i / grid);
     const tmp = document.createElement("canvas");
     tmp.width = fw; tmp.height = fh;
     tmp.getContext("2d").drawImage(img, col * fw, row * fh, fw, fh, 0, 0, fw, fh);
-    frames.push(trim(tmp));
+    const b = bboxOf(tmp);
+    if (b) {
+      L = Math.min(L, b.left);
+      T = Math.min(T, b.top);
+      R = Math.max(R, b.right);
+      B = Math.max(B, b.bottom);
+    }
   }
-  return frames;
+  if (R < 0) return { left: 0, top: 0, w: fw, h: fh };
+  return { left: L, top: T, w: R - L + 1, h: B - T + 1 };
+}
+
+/** 取精灵表某一帧（未裁切） */
+function sheetCell(img, index, grid = GRID) {
+  const fw = Math.round((img.naturalWidth || img.width) / grid);
+  const fh = Math.round((img.naturalHeight || img.height) / grid);
+  const col = index % grid;
+  const row = Math.floor(index / grid);
+  const c = document.createElement("canvas");
+  c.width = fw; c.height = fh;
+  // 9 参数：源 (x,y,w,h) → 目标 (0,0,w,h)，才是裁切；3 参数是缩放（错误）
+  c.getContext("2d").drawImage(img, col * fw, row * fh, fw, fh, 0, 0, fw, fh);
+  return c;
 }
 
 let petArea = { w: 320, h: 380 };   // 宠物区尺寸（不含气泡区），主进程下发
@@ -132,29 +153,38 @@ async function loadSheet(action) {
   const src = await tryLoad(`${action}.png`);
   if (!src) return false;   // 缺素材就跳过该动作，不回退到别的图
 
+  // 整张表共用一个内容矩形：保证 25 帧尺寸/比例一致
+  const rect = unionRect(src, GRID);
   if (cfg.mode === "prog") {
-    // 程序动画：裁切第 0 帧（已去留白），配合正弦运动（流畅）
-    sheets[action] = cropFrame(src);
-    singleFrame[action] = true;
-    reportHitRect();
-    return true;
+    // 程序动画：只取第 0 帧，但用同一矩形，尺寸与精灵表一致
+    sheets[action] = cropRect(sheetCell(src, 0), rect);
+  } else {
+    const frames = [];
+    for (let i = 0; i < GRID * GRID; i++) frames.push(cropRect(sheetCell(src, i), rect));
+    sheets[action] = frames;
   }
-  // 精灵表：逐帧裁切并去留白
-  sheets[action] = cropSheet(src);
-  singleFrame[action] = false;
+  singleFrame[action] = cfg.mode === "prog";
   reportHitRect();
   return true;
 }
 
-function drawSheet(frames, winW, winH) {
-  const img = frames[frameIndex % frames.length];
-  const h = spriteHeight();
-  const w = Math.round(h * (img.width / img.height));
-  const x = (winW - w) / 2;
-  const y = winH - 8 - h;
-  ctx.clearRect(0, 0, winW, winH);
+/** 把一帧画到窗口里：内容中心对准窗口水平中心，底边贴住窗口底部。
+ *  缩放系数对所有帧一致，位置用该帧在格子里的真实偏移。 */
+function drawCatFrame(frame, winW, winH, scale = cellScale()) {
+  const img = frame.canvas;
+  const w = img.width * scale;
+  const h = img.height * scale;
+  const centerX = (frame.left + img.width / 2) * scale;
+  const bottom = (frame.top + img.height) * scale;
+  const x = winW / 2 - centerX;
+  const y = winH - 8 - bottom;
   ctx.drawImage(img, x, y, w, h);
   return { x, y, w, h };
+}
+
+function drawSheet(frames, winW, winH) {
+  ctx.clearRect(0, 0, winW, winH);
+  return drawCatFrame(frames[frameIndex % frames.length], winW, winH);
 }
 
 /** 程序动画：呼吸 + 浮动 + 眨眼（正弦驱动，流畅无抖动） */
@@ -163,17 +193,16 @@ function drawProg(img, winW, winH, t, cfg = {}) {
   const bob = (cfg.bobAmp ?? 2) * Math.sin((t / (cfg.bobPeriod ?? 3600)) * Math.PI * 2);
   const blinkState = cfg.blink ? updateBlink() : false;
 
-  const h = spriteHeight() * breath;
-  const w = Math.round(h * (img.width / img.height));
-  const x = (winW - w) / 2;
-  const y = winH - 8 - h + bob;
+  const rect = drawCatFrame(img, winW, winH, cellScale() * breath);
+  rect.y += bob;
 
   ctx.clearRect(0, 0, winW, winH);
-  ctx.drawImage(img, x, y, w, h);
+  ctx.drawImage(img.canvas, rect.x, rect.y, rect.w, rect.h);
 
   if (blinkState) {
     ctx.save();
     ctx.strokeStyle = "#1c1c1c";
+    const { x, y, w, h } = rect;
     ctx.lineWidth = Math.max(1.5, h * 0.012);
     ctx.lineCap = "round";
     const ey = y + h * 0.3;
@@ -204,7 +233,7 @@ function drawFrame(t = performance.now()) {
   if (!stored) return;
   // 精灵表存的是帧数组，程序动画是单张
   const img = Array.isArray(stored) ? stored[frameIndex % stored.length] : stored;
-  if (!img || !(img.naturalWidth || img.width)) return;
+  if (!img || !img.canvas || !img.canvas.width) return;
   const W = canvas.clientWidth || 320;
   const H = canvas.clientHeight || 381;
   const dpr = window.devicePixelRatio || 1;
@@ -277,17 +306,18 @@ function reportBubbleSize(visible) {
 function reportHitRect() {
   const winW = canvas.clientWidth || petArea.w;
   const winH = canvas.clientHeight || petArea.h;
-  const h = spriteHeight();
   const stored = sheets[currentAction] || sheets.idle;
   if (!stored) return;   // 素材还没加载完，等加载完再报
   const first = Array.isArray(stored) ? stored[0] : stored;
   if (!first) return;
-  const w = Math.round(h * (first.width / first.height));
+  const scale = cellScale();
+  const w = first.canvas.width * scale;
+  const h = first.canvas.height * scale;
   const rect = {
-    x: (winW - w) / 2,
-    y: winH - 8 - h - 8,
+    x: winW / 2 - (first.left + first.canvas.width / 2) * scale,
+    y: winH - 8 - (first.top + first.canvas.height) * scale,
     w,
-    h: h + 8,
+    h,
   };
   try { window.scoutcat.setHitRect(rect); } catch { /* 忽略 */ }
 }
