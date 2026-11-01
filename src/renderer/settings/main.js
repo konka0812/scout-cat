@@ -166,22 +166,33 @@ $("save").addEventListener("click", async () => {
 });
 
 $("runNow").addEventListener("click", async () => {
+  const btn = $("runNow");
+  if (btn.disabled) return;
+  btn.disabled = true;
   $("status").textContent = "正在查找…";
-  const r = await window.scoutcat.runNow();
-  if (r?.ok) {
-    if (r.items?.length) {
-      await window.scoutcat.addDiscoveries(r.items);
-      window.scoutcat.play("discover");
-      if (r.items[0]) window.scoutcat.showBubble(r.items[0]);
-      $("status").textContent = `找到 ${r.items.length} 条新发现`;
+  try {
+    const r = await window.scoutcat.runNow();
+    if (r?.ok) {
+      if (r.items?.length) {
+        await window.scoutcat.addDiscoveries(r.items);
+        window.scoutcat.play("discover");
+        if (r.items[0]) window.scoutcat.showBubble(r.items[0]);
+        $("status").textContent = `找到 ${r.items.length} 条新发现`;
+      } else {
+        $("status").textContent = "这次没有新发现";
+      }
+    } else if (r?.error?.includes("正在查找中")) {
+      $("status").textContent = r.error;
     } else {
-      $("status").textContent = "这次没有新发现";
+      $("status").textContent = `查找失败：${r?.error || "未知错误，请稍后重试"}`;
     }
-  } else {
-    $("status").textContent = `查找失败：${r?.error || "未知"}`;
+  } catch (e) {
+    $("status").textContent = `查找失败：${e?.message || "未知错误"}`;
+  } finally {
+    btn.disabled = false;
+    refreshPatrolStatus();
+    refreshReview();
   }
-  refreshPatrolStatus();
-  refreshReview();
 });
 
 // 定期刷新巡逻状态

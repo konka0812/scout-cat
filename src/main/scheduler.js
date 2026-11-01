@@ -133,7 +133,7 @@ if ($w -ge $mw -and $h -ge $mh) { Write-Output "1" } else { Write-Output "0" }
   }
 
   async runPatrol() {
-    if (this.running) return null;
+    if (this.running) return { ok: false, items: [], error: "正在查找中，请稍候再点" };
     if (this.paused) return { ok: false, items: [], error: "已暂停：额度或登录失效，请在设置中检查" };
     this.running = true;
     this.lastStatus = "running";
@@ -212,7 +212,7 @@ if ($w -ge $mw -and $h -ge $mh) { Write-Output "1" } else { Write-Output "0" }
     } catch (e) {
       this.lastStatus = "error";
       this.lastError = e?.message || String(e);
-      return null;
+      return { ok: false, items: [], error: `巡逻出错：${this.lastError || "未知错误"}` };
     } finally {
       this.running = false;
     }
