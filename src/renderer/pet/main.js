@@ -15,9 +15,9 @@ const FRAME_NATURAL = 205;
 const BASE_WIN_W = 320;
 const FRAME_RATIO = FRAME_NATURAL / BASE_WIN_W;
 
-/** 精灵图渲染边长：跟窗口联动，且不超出高度 */
-function spriteSize(W, H) {
-  return Math.min(W * FRAME_RATIO, H * 0.92);
+/** 猫的渲染高度：宠物区高度 - 上下固定边距 */
+function spriteHeight() {
+  return Math.max(24, petArea.h - 16);
 }
 
 // ===== 动画配置 =====
@@ -32,7 +32,30 @@ const ANIM = {
   pet:      { mode: "sheet" },
 };
 
-/** 裁切精灵表第 0 帧，返回 canvas 作为程序动画的单帧源 */
+/** 裁掉画布周围的透明留白，返回紧贴内容的画布 */
+function trim(canvas, threshold = 24) {
+  const w = canvas.width, h = canvas.height;
+  const d = canvas.getContext("2d").getImageData(0, 0, w, h).data;
+  let top = -1, bottom = -1, left = -1, right = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (d[(y * w + x) * 4 + 3] > threshold) {
+        if (top < 0) top = y;
+        bottom = y;
+        if (left < 0 || x < left) left = x;
+        if (x > right) right = x;
+      }
+    }
+  }
+  if (top < 0) return canvas;
+  const c = document.createElement("canvas");
+  c.width = right - left + 1;
+  c.height = bottom - top + 1;
+  c.getContext("2d").drawImage(canvas, left, top, c.width, c.height, 0, 0, c.width, c.height);
+  return c;
+}
+
+/** 裁切精灵表第 0 帧并去掉留白，作为程序动画的单帧源 */
 function cropFrame(img, grid = GRID) {
   const w = Math.round((img.naturalWidth || img.width) / grid);
   const h = Math.round((img.naturalHeight || img.height) / grid);
@@ -40,9 +63,26 @@ function cropFrame(img, grid = GRID) {
   c.width = w; c.height = h;
   // 9 参数：源 (0,0,w,h) → 目标 (0,0,w,h)，才是裁切；3 参数是缩放（错误）
   c.getContext("2d").drawImage(img, 0, 0, w, h, 0, 0, w, h);
-  return c;
+  return trim(c);
 }
 
+/** 精灵表逐帧裁切并去留白 */
+function cropSheet(img, grid = GRID) {
+  const fw = Math.round((img.naturalWidth || img.width) / grid);
+  const fh = Math.round((img.naturalHeight || img.height) / grid);
+  const frames = [];
+  for (let i = 0; i < grid * grid; i++) {
+    const col = i % grid;
+    const row = Math.floor(i / grid);
+    const tmp = document.createElement("canvas");
+    tmp.width = fw; tmp.height = fh;
+    tmp.getContext("2d").drawImage(img, col * fw, row * fh, fw, fh, 0, 0, fw, fh);
+    frames.push(trim(tmp));
+  }
+  return frames;
+}
+
+let petArea = { w: 320, h: 380 };   // 宠物区尺寸（不含气泡区），主进程下发
 let petDir = "";
 let sheets = {};      // action -> Image
 let singleFrame = {}; // action -> bool（true 表示用单帧 + 程序动画）
@@ -93,56 +133,57 @@ async function loadSheet(action) {
   if (!src) return false;   // 缺素材就跳过该动作，不回退到别的图
 
   if (cfg.mode === "prog") {
-    // 程序动画：裁切第 0 帧，配合正弦运动（流畅）
+    // 程序动画：裁切第 0 帧（已去留白），配合正弦运动（流畅）
     sheets[action] = cropFrame(src);
     singleFrame[action] = true;
+    reportHitRect();
     return true;
   }
-  // 精灵表：整图 5×5 顺序播放
-  sheets[action] = src;
+  // 精灵表：逐帧裁切并去留白
+  sheets[action] = cropSheet(src);
   singleFrame[action] = false;
+  reportHitRect();
   return true;
 }
 
-function drawSheet(img, W, H, t) {
-  const fw = img.naturalWidth / GRID;
-  const fh = img.naturalHeight / GRID;
-  const size = spriteSize(W, H);
-  const x = (W - size) / 2;
-  const y = H - size - H * 0.04;
-  const col = frameIndex % GRID;
-  const row = Math.floor(frameIndex / GRID) % GRID;
-  ctx.clearRect(0, 0, W, H);
-  ctx.drawImage(img, col * fw, row * fh, fw, fh, x, y, size, size);
+function drawSheet(frames, winW, winH) {
+  const img = frames[frameIndex % frames.length];
+  const h = spriteHeight();
+  const w = Math.round(h * (img.width / img.height));
+  const x = (winW - w) / 2;
+  const y = winH - 8 - h;
+  ctx.clearRect(0, 0, winW, winH);
+  ctx.drawImage(img, x, y, w, h);
+  return { x, y, w, h };
 }
 
 /** 程序动画：呼吸 + 浮动 + 眨眼（正弦驱动，流畅无抖动） */
-function drawProg(img, W, H, t, cfg = {}) {
+function drawProg(img, winW, winH, t, cfg = {}) {
   const breath = 1 + (cfg.breathAmp ?? 0.018) * Math.sin((t / (cfg.breathPeriod ?? 2600)) * Math.PI * 2);
   const bob = (cfg.bobAmp ?? 2) * Math.sin((t / (cfg.bobPeriod ?? 3600)) * Math.PI * 2);
   const blinkState = cfg.blink ? updateBlink() : false;
 
-  const base = spriteSize(W, H);
-  const size = base * breath;
-  const x = (W - size) / 2;
-  const y = H - size - H * 0.04 + bob;
+  const h = spriteHeight() * breath;
+  const w = Math.round(h * (img.width / img.height));
+  const x = (winW - w) / 2;
+  const y = winH - 8 - h + bob;
 
-  ctx.clearRect(0, 0, W, H);
-  ctx.drawImage(img, x, y, size, size);
+  ctx.clearRect(0, 0, winW, winH);
+  ctx.drawImage(img, x, y, w, h);
 
   if (blinkState) {
     ctx.save();
     ctx.strokeStyle = "#1c1c1c";
-    ctx.lineWidth = Math.max(1.5, size * 0.012);
+    ctx.lineWidth = Math.max(1.5, h * 0.012);
     ctx.lineCap = "round";
-    const ey = y + size * 0.3;
-    const e1x = x + size * 0.38;
-    const e2x = x + size * 0.62;
+    const ey = y + h * 0.3;
+    const e1x = x + w * 0.38;
+    const e2x = x + w * 0.62;
     ctx.beginPath();
-    ctx.moveTo(e1x - size * 0.045, ey);
-    ctx.lineTo(e1x + size * 0.045, ey);
-    ctx.moveTo(e2x - size * 0.045, ey);
-    ctx.lineTo(e2x + size * 0.045, ey);
+    ctx.moveTo(e1x - w * 0.045, ey);
+    ctx.lineTo(e1x + w * 0.045, ey);
+    ctx.moveTo(e2x - w * 0.045, ey);
+    ctx.lineTo(e2x + w * 0.045, ey);
     ctx.stroke();
     ctx.restore();
   }
@@ -159,7 +200,10 @@ function updateBlink() {
 }
 
 function drawFrame(t = performance.now()) {
-  const img = sheets[currentAction];
+  const stored = sheets[currentAction];
+  if (!stored) return;
+  // 精灵表存的是帧数组，程序动画是单张
+  const img = Array.isArray(stored) ? stored[frameIndex % stored.length] : stored;
   if (!img || !(img.naturalWidth || img.width)) return;
   const W = canvas.clientWidth || 320;
   const H = canvas.clientHeight || 381;
@@ -173,7 +217,7 @@ function drawFrame(t = performance.now()) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const cfg = ANIM[currentAction] || {};
   if (cfg.mode === "prog") drawProg(img, W, H, t, cfg);
-  else drawSheet(img, W, H, t);
+  else drawSheet(stored, W, H);
 }
 
 function loop(t) {
@@ -217,16 +261,33 @@ function hitTest(x, y) {
   }
 }
 
+/** 把气泡尺寸报给主进程，主进程据此把窗口长高，避免气泡压到猫 */
+function reportBubbleSize(visible) {
+  const b = bubbleEl.getBoundingClientRect();
+  try {
+    window.scoutcat.setBubbleSize({
+      visible,
+      w: Math.ceil(b.width),
+      h: visible ? Math.ceil(b.height) : 0,
+    });
+  } catch { /* 忽略 */ }
+}
+
 /** 把猫的碰撞矩形（窗口内 CSS 坐标）报给主进程，用于判断光标是否在身上 */
 function reportHitRect() {
-  const W = canvas.clientWidth || 320;
-  const H = canvas.clientHeight || 381;
-  const size = spriteSize(W, H);
+  const winW = canvas.clientWidth || petArea.w;
+  const winH = canvas.clientHeight || petArea.h;
+  const h = spriteHeight();
+  const stored = sheets[currentAction] || sheets.idle;
+  if (!stored) return;   // 素材还没加载完，等加载完再报
+  const first = Array.isArray(stored) ? stored[0] : stored;
+  if (!first) return;
+  const w = Math.round(h * (first.width / first.height));
   const rect = {
-    x: (W - size) / 2,
-    y: H - size - H * 0.08,
-    w: size,
-    h: size + H * 0.08,
+    x: (winW - w) / 2,
+    y: winH - 8 - h - 8,
+    w,
+    h: h + 8,
   };
   try { window.scoutcat.setHitRect(rect); } catch { /* 忽略 */ }
 }
@@ -285,6 +346,7 @@ async function loadBubbleConfig() {
   try {
     const cfg = await window.scoutcat.getBubbleConfig();
     bubbleDurationMs = (cfg.durationSec || 30) * 1000;
+    if (cfg.petArea) petArea = cfg.petArea;
   } catch { /* 忽略 */ }
 }
 
@@ -294,11 +356,8 @@ function showBubble(message) {
   bubbleEl.innerHTML = "";
   const div = document.createElement("div");
   div.className = "text";
-  const isGithub = String(message.url || "").includes("github.com");
   // GitHub 条目标题只是 "xxx — GitHub 今日热榜"，气泡用简介更有用
-  const bubbleText = isGithub
-    ? message.summary || message.title || ""
-    : message.bubble || message.title || "";
+  const bubbleText = message.summary || message.bubble || message.title || "";
   div.textContent = bubbleText.length > 90 ? bubbleText.slice(0, 90) + "…" : bubbleText;
   const span = document.createElement("span");
   span.className = "src";
@@ -306,6 +365,7 @@ function showBubble(message) {
   bubbleEl.appendChild(div);
   bubbleEl.appendChild(span);
   bubbleEl.classList.add("show");
+  reportBubbleSize(true);
   window.scoutcat.setClickThrough(false);   // 气泡显示时禁用穿透，保证可点击
   play("deliver");
   clearTimeout(bubbleTimer);
@@ -315,6 +375,7 @@ function showBubble(message) {
 function hideBubble() {
   bubbleEl.classList.remove("show");
   currentBubble = null;
+  reportBubbleSize(false);
   window.scoutcat.setClickThrough(true);    // 气泡隐藏后恢复穿透
   try { window.scoutcat.notifyBubbleHidden(); } catch { /* 忽略 */ }
 }

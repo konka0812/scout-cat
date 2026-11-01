@@ -2,7 +2,16 @@ import { BrowserWindow, screen } from "electron";
 import { join } from "node:path";
 
 const WIN_W = 320;
-const WIN_H = 380;
+// 精灵表单帧 205px（1024/5）
+const FRAME_RATIO = 205 / 320;
+// 猫上方的固定边距（不随缩放变化）——这样气泡永远贴在猫上方，
+// 不会因为缩放越大被推得越远。
+const PET_MARGIN = 24;
+
+/** 宠物区高度 = 精灵高 + 固定边距 */
+function petHeight(scale) {
+  return Math.round(WIN_W * scale * FRAME_RATIO) + PET_MARGIN;
+}
 
 function rendererUrl(name) {
   const dev = process.env.VITE_DEV_SERVER_URL;
@@ -16,7 +25,7 @@ export class PetWindow {
     // 启动时就读 settings.pet.scale，之前只在设置界面改才生效
     this.scale = Math.max(0.5, Number(scale) || 1);
     const w = Math.round(WIN_W * this.scale);
-    const h = Math.round(WIN_H * this.scale);
+    const h = petHeight(this.scale);
     const win = new BrowserWindow({
       width: w,
       height: h,
@@ -46,6 +55,8 @@ export class PetWindow {
     this.win = win;
     this.w = w;
     this.h = h;
+    this.winW = w;
+    this.winH = h;
   }
 
   play(action) {
@@ -58,6 +69,31 @@ export class PetWindow {
   hideBubble() {
     this.bubbleVisible = false;
     this.win.webContents.send("pet:bubble", null);
+  }
+
+  /** 气泡尺寸变化 → 重新计算窗口大小（气泡在上、猫在下，互不重叠） */
+  setBubbleSize(size) {
+    this.bubbleSize = size && size.visible ? { w: size.w, h: size.h } : null;
+    this.relayout();
+  }
+
+  /** 窗口 = 宠物区 + 气泡区（仅气泡显示时）；保持右下角锚点 */
+  relayout() {
+    let W = this.w;
+    let H = this.h;
+    if (this.bubbleSize && this.bubbleSize.h > 0) {
+      W = Math.max(this.w, 250 + 20);
+      H = this.h + this.bubbleSize.h + 12;
+    }
+    if (this.winW === W && this.winH === H) return;
+    const b = this.win.getBounds();
+    const x = b.x + (b.width - W);
+    const y = b.y + (b.height - H);
+    this.win.setMinimumSize(1, 1);
+    this.win.setSize(W, H, false);
+    this.win.setPosition(x, y, false);
+    this.winW = W;
+    this.winH = H;
   }
   hasBubble() {
     return !!this.bubbleVisible;
@@ -83,8 +119,8 @@ export class PetWindow {
   moveTo(x, y) {
     // 夹在可视工作区内：拖太远会够不着（窗口平时是点击穿透的）
     const { workArea } = screen.getPrimaryDisplay();
-    const maxX = workArea.x + workArea.width - this.w;
-    const maxY = workArea.y + workArea.height - this.h;
+    const maxX = workArea.x + workArea.width - (this.winW || this.w);
+    const maxY = workArea.y + workArea.height - (this.winH || this.h);
     const cx = Math.max(workArea.x, Math.min(Math.round(x), maxX));
     const cy = Math.max(workArea.y, Math.min(Math.round(y), maxY));
     this.win.setPosition(cx, cy, false);
@@ -96,7 +132,7 @@ export class PetWindow {
     const s = Math.max(0.5, Number(scale) || 1);
     this.scale = s;
     const w = Math.round(WIN_W * s);
-    const h = Math.round(WIN_H * s);
+    const h = petHeight(s);
     const b = this.win.getBounds();
     this.win.setMinimumSize(1, 1);
     this.win.setSize(w, h, false);
@@ -104,6 +140,7 @@ export class PetWindow {
     this.win.setPosition(b.x + (b.width - w), b.y + (b.height - h), false);
     this.w = w;
     this.h = h;
+    this.relayout();
   }
   isDestroyed() {
     return this.win.isDestroyed();

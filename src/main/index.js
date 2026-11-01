@@ -152,6 +152,7 @@ function registerIpc() {
       durationSec: st.bubbleDurationSec || 30,
       carouselSec: st.carouselIntervalSec || 2,
       carouselEnabled: st.carouselEnabled !== false,
+      petArea: petWindow ? { w: petWindow.w, h: petWindow.h } : null,
     };
   });
   ipcMain.handle("discoveries:update", (_e, id, patch) => {
@@ -225,6 +226,7 @@ function registerIpc() {
   ipcMain.handle("pet:getBounds", () => petWindow?.getBounds());
   ipcMain.handle("pet:resize", (_e, scale) => petWindow?.setScale(scale));
   ipcMain.handle("pet:setHitRect", (_e, rect) => petWindow?.setHitRect(rect));
+  ipcMain.handle("pet:setBubbleSize", (_e, size) => petWindow?.setBubbleSize(size));
   ipcMain.handle("pet:dock", () => {
     // 边缘停靠：主进程判断靠近哪条边并吸附
     if (!petWindow) return null;

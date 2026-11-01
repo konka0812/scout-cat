@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld("scoutcat", {
   getPetBounds: () => ipcRenderer.invoke("pet:getBounds"),
   resizePet: (scale) => ipcRenderer.invoke("pet:resize", scale),
   setHitRect: (rect) => ipcRenderer.invoke("pet:setHitRect", rect),
+  setBubbleSize: (size) => ipcRenderer.invoke("pet:setBubbleSize", size),
   dockPet: (edge) => ipcRenderer.invoke("pet:dock", edge),
 
   openUrl: (url) => ipcRenderer.invoke("open:url", url),
