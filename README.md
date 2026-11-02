@@ -64,6 +64,9 @@
 
 ## 快速开始
 
+> 📚 更详细的说明（安装、第一次运行、气泡、背包、去重、设置项、常见问题）见 [用户手册](docs/用户手册.md)。
+
+
 ### 下载（推荐）
 
 去 [Releases](https://github.com/konka0812/scout-cat/releases/latest) 下载：
@@ -166,7 +169,9 @@ npm run dist                          # 本地打包（NSIS + 便携版）
 ```
 .
 ├── assets/pet/                 宠物素材（6 张 5×5 精灵图 + 角色标准图）
-├── docs/                       设计文档
+├── docs/
+│   ├── 用户手册.md                  完整使用说明（安装 / 设置 / 去重 / FAQ）
+│   └── DeepSeek桌宠搜索去重与提示词设计.md   搜索/去重/提示词设计
 ├── src/
 │   ├── main/                   主进程：窗口、IPC、调度、托盘、持久化
 │   ├── preload/                上下文桥（IPC 白名单）
