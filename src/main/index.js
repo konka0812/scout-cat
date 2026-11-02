@@ -58,7 +58,7 @@ app.whenReady().then(async () => {
   petWindow = new PetWindow({ scale: store.get("pet.scale") || 1 });
   // 光标在猫身上时才接收鼠标事件；移开就恢复穿透，不挡下面的窗口。
   // 之前靠渲染层 mousemove 判断，光标静止时不会触发，导致按下去没反应。
-  setInterval(() => {
+  const cursorTimer = setInterval(() => {
     if (!petWindow) return;
     if (petWindow.bubbleVisible) return;      // 气泡显示时保持可点
     const rect = petWindow.hitRect;
@@ -299,4 +299,14 @@ function applyFeedback(store, discovery, patch) {
 }
 
 app.on("window-all-closed", (e) => e.preventDefault());
-app.on("before-quit", () => scheduler?.stop());
+app.on("before-quit", () => {
+  // 先停掉所有定时器，再停调度器：否则窗口销毁后回调还在跑，
+  // 访问已销毁窗口会抛 "Object has been destroyed"
+  if (cursorTimer) clearInterval(cursorTimer);
+  scheduler?.stop();
+});
+
+// 主进程未捕获异常：记日志而不是弹系统错误框（桌面宠物不该弹窗打扰）
+process.on("uncaughtException", (e) => {
+  console.error("[scout-cat] 主进程未捕获异常:", e?.stack || e);
+});

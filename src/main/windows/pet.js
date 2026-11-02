@@ -59,15 +59,31 @@ export class PetWindow {
     this.winH = h;
   }
 
+  /** 窗口是否还活着（退出时窗口会被销毁，定时器回调要防一手） */
+  get alive() {
+    return !!this.win && !this.win.isDestroyed();
+  }
+  /** 已销毁时返回上次已知的 bounds，避免调用方拿到 undefined */
+  safeBounds() {
+    if (!this.alive) {
+      return this._lastBounds || { x: 0, y: 0, width: this.winW || this.w, height: this.winH || this.h };
+    }
+    this._lastBounds = this.win.getBounds();
+    return this._lastBounds;
+  }
+
   play(action) {
+    if (!this.alive) return;
     this.win.webContents.send("pet:action", action);
   }
   showBubble(message) {
     this.bubbleVisible = true;
+    if (!this.alive) return;
     this.win.webContents.send("pet:bubble", message);
   }
   hideBubble() {
     this.bubbleVisible = false;
+    if (!this.alive) return;
     this.win.webContents.send("pet:bubble", null);
   }
 
@@ -79,6 +95,7 @@ export class PetWindow {
 
   /** 窗口 = 宠物区 + 气泡区（仅气泡显示时）；保持右下角锚点 */
   relayout() {
+    if (!this.alive) return;
     let W = this.w;
     let H = this.h;
     if (this.bubbleSize && this.bubbleSize.h > 0) {
@@ -102,6 +119,7 @@ export class PetWindow {
     this.bubbleVisible = false;
   }
   setClickThrough(ignore) {
+    if (!this.alive) return;
     this.win.setIgnoreMouseEvents(ignore, { forward: true });
   }
 
@@ -114,9 +132,11 @@ export class PetWindow {
   applyClickThrough(ignore) {
     if (this._ignore === ignore) return;
     this._ignore = ignore;
+    if (!this.alive) return;
     this.setClickThrough(ignore);
   }
   moveTo(x, y) {
+    if (!this.alive) return;
     // 夹在可视工作区内：拖太远会够不着（窗口平时是点击穿透的）
     const { workArea } = screen.getPrimaryDisplay();
     const maxX = workArea.x + workArea.width - (this.winW || this.w);
@@ -126,9 +146,10 @@ export class PetWindow {
     this.win.setPosition(cx, cy, false);
   }
   getBounds() {
-    return this.win.getBounds();
+    return this.safeBounds();
   }
   setScale(scale) {
+    if (!this.alive) return;
     const s = Math.max(0.5, Number(scale) || 1);
     this.scale = s;
     const w = Math.round(WIN_W * s);
