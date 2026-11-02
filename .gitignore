@@ -1,7 +1,25 @@
+# 依赖 / 构建产物
 node_modules/
 out/
 dist/
-app.log
+
+# 日志
 *.log
-.DS_Store
+app.log
+
+# 打包产物
 scout-cat-app.zip
+*.exe
+*.dmg
+*.AppImage
+
+# 本地用户数据（绝不要提交）
+config.json
+*.local.json
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

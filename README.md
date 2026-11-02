@@ -1,9 +1,38 @@
 # 情报猎猫（Scout Cat）
 
-AI 情报桌面宠物。你把关注的事情交给它，它持续寻找，带回值得花几十秒了解的发现。
+> **AI 情报桌面宠物** —— 你把关注的事情交给它，它持续寻找，带回值得花几十秒了解的发现。
 
-Windows 桌面应用（Electron）。猎猫蹲在屏幕角落，按时巡逻；搜到与你关注内容相关的
-新消息就弹气泡提醒，其余的默默进背包，等你有空再翻。
+*A desktop pet that keeps watch on the topics you care about. It patrols on a schedule, summarizes what it finds in plain Chinese, and only interrupts you when something genuinely new surfaces — everything else waits quietly in its backpack.*
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-2E7D32.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/konka0812/scout-cat)](https://github.com/konka0812/scout-cat/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Windows-0078D6.svg)](#快速开始)
+[![CI](https://github.com/konka0812/scout-cat/actions/workflows/build.yml/badge.svg)](https://github.com/konka0812/scout-cat/actions/workflows/build.yml)
+[![Tests](https://img.shields.io/badge/Tests-77%20passing-2E7D32.svg)](#开发与测试)
+
+---
+
+## 这是什么
+
+桌上蹲着一只猫。你告诉它关心什么，它按自己的节奏上网巡逻：搜 AI 新闻、工具、项目进展，
+再用大模型判断哪些是真正的新事件，写成一句中文简介。
+
+值得打断你的，它才弹个气泡；剩下的都默默塞进背包，等你有空自己翻。
+
+**它解决的是"信息焦虑"，不是"信息推送"。** 大部分资讯不值得你停下手上的事，
+但偶尔确实有一两条值得。区别就在这儿。
+
+---
+
+## 界面预览
+
+<p align="center">
+  <img src="screenshots/pet.png" height="200" alt="桌宠" />
+  <img src="screenshots/backpack.png" height="200" alt="发现背包" />
+  <img src="screenshots/settings.png" height="200" alt="设置" />
+</p>
+
+<p align="center"><i>桌宠 · 发现背包 · 设置</i></p>
 
 ---
 
@@ -11,12 +40,14 @@ Windows 桌面应用（Electron）。猎猫蹲在屏幕角落，按时巡逻；�
 
 | 模块 | 说明 |
 |---|---|
-| **桌面宠物** | 透明悬浮窗、拖动、点击穿透（只在猫身上才接收鼠标，不挡别的窗口）、托盘驻留 |
-| **情报巡逻** | 按设定频率调用 OpenAI 兼容模型 + DeepSeek 搜索，搜集 AI 新闻 / 工具 / 项目进展 |
-| **GitHub 热榜** | 独立于搜索，每次巡逻推荐今日热榜项目（带中文简介） |
-| **发现背包** | 新发现 / 已收藏 / 待核实 三个页签，点开直达原文 |
-| **气泡提醒** | 高度相关的发现触发报信动作 + 气泡；未读条目按间隔轮播提醒 |
-| **免打扰 / 上限** | 免打扰时段、每日最多弹出次数、每月上限、全屏暂缓 |
+| **桌面宠物** | 透明悬浮窗、拖动、点击穿透（只在猫身上才接收鼠标，不挡别的窗口）、托盘驻留、双击开背包、右键开设置 |
+| **情报巡逻** | 按设定频率调用 OpenAI 兼容模型 + DeepSeek 搜索，自动带当天日期限定时间范围 |
+| **GitHub 热榜** | 独立于搜索，每次巡逻推荐今日热榜项目，按你的兴趣打分并生成中文简介 |
+| **发现背包** | 新发现 / 已收藏 / 待核实 三个页签，点开直达原文，支持已阅、收藏、少看这类、一键清空 |
+| **气泡提醒** | 高度相关的发现触发报信动作 + 气泡；背包里有未读时持续轮播 |
+| **去重账本** | 以背包为唯一准绳：同一 URL 内容没变就跳过，内容变了才算新进展 |
+| **免打扰 / 上限** | 免打扰时段、每日最多弹出次数、全屏暂缓、气泡时长可调 |
+| **素材可换** | 动画素材就是普通 PNG 精灵图，随手替换 |
 
 ### 去重逻辑（以背包为准绳）
 
@@ -33,109 +64,56 @@ Windows 桌面应用（Electron）。猎猫蹲在屏幕角落，按时巡逻；�
 
 ## 快速开始
 
-### 方式一：直接运行（已打包）
+### 下载（推荐）
+
+去 [Releases](https://github.com/konka0812/scout-cat/releases/latest) 下载：
 
 | 文件 | 说明 |
 |---|---|
-| `dist\scout-cat-0.1.0-win.exe` | 安装版，可选路径，带桌面/开始菜单快捷方式 |
-| `dist\scout-cat-0.1.0-portable.exe` | 便携版，双击即用，不写注册表 |
+| `scout-cat-<版本>-win.exe` | 安装版，可选路径，带桌面 / 开始菜单快捷方式 |
+| `scout-cat-<版本>-portable.exe` | 便携版，双击即用，不写注册表 |
 
-> 未做代码签名，Windows 会提示「未知发布者」，点「仍要运行」即可。
+> ⚠️ **没有代码签名**，Windows 会提示「未知发布者」，点「仍要运行」即可。
+> 要消除这个提示需要购买代码签名证书（见[已知限制](#已知限制)）。
 
-### 方式二：从源码跑
+### 自己构建
 
 ```bash
+git clone https://github.com/konka0812/scout-cat.git
+cd scout-cat
 npm install
 npm start          # 自动先 build，再启动
 ```
 
-### 配置
+打包 exe：
+
+```bash
+npm run dist                          # 本地打包（NSIS + 便携版）
+```
+
+或者直接推 `v*` 标签，让 GitHub Actions 在云端打包并挂到 Release（见[用 GitHub Actions 打包](#用-github-actions-打包)）。
+
+---
+
+## 配置你的 API
 
 首次打开后进「设置 → 接口」填：
 
 | 字段 | 说明 |
 |---|---|
 | Base URL | OpenAI 兼容接口地址，如 `https://api.deepseek.com/v1` |
-| API Key | 模型 API Key（本地保存，不入库） |
+| API Key | 模型 API Key |
 | Model | 模型名，如 `deepseek-chat` |
 | Search Base URL | 搜索服务地址，默认 `https://api.deepseek.com` |
 
-> Key 保存在 `%APPDATA%\scout-cat\config.json`，**不在仓库里**。
+**兼容性**：任何 OpenAI 兼容的推理接口都能用，不限于 DeepSeek；搜索能力依赖 DeepSeek Search。
 
----
+> 🔒 Key 只保存在本机 `%APPDATA%\scout-cat\config.json`，**不在仓库里，也不会上传**。
 
-## 文件说明
+### 关注什么
 
-```
-.
-├── .gitignore                      排除 node_modules / out / dist / 日志 / 打包产物
-├── package.json                    工程清单 + electron-builder 打包配置
-├── package-lock.json               依赖锁定（201 KB）
-├── electron.vite.config.mjs        electron-vite 配置
-├── longcat.png                     托盘图标 + 程序图标（361×361）
-├── README.md                       本文件
-│
-├── DeepSeek桌宠搜索去重与提示词设计.md    搜索/去重/提示词设计文档
-└── 情报猎猫桌宠产品方案.md                产品方案
-│
-├── assets/pet/                     宠物素材（已预生成，运行时只读）
-│   ├── character-base.png          角色标准图（引导页 logo）
-│   ├── idle.png                    待机 5×5 精灵图（运行时用第 0 帧 + 程序动画）
-│   ├── sleep.png                   睡觉 5×5 精灵图（同上）
-│   ├── walk.png                    行走 5×5 精灵图（同上）
-│   ├── discover.png                发现动作 5×5 精灵图（顺序播放）
-│   ├── deliver.png                 报信动作 5×5 精灵图（顺序播放）
-│   └── pet.png                     被摸动作 5×5 精灵图（顺序播放）
-│
-├── src/
-│   ├── main/                               主进程
-│   │   ├── index.js                        应用入口：窗口创建、IPC、光标轮询、托盘
-│   │   ├── scheduler.js                    巡逻调度：定时巡逻、气泡队列、未读轮播、GitHub 推荐
-│   │   ├── store.js                        持久化（electron-store）
-│   │   ├── tray.js                         系统托盘
-│   │   └── windows/
-│   │       ├── pet.js                      宠物窗：尺寸/缩放/锚点/点击穿透/气泡区
-│   │       ├── backpack.js                 发现背包窗
-│   │       ├── settings.js                 设置窗
-│   │       └── onboarding.js               首次引导窗
-│   │
-│   ├── preload/
-│   │   └── index.js                        上下文桥（IPC 白名单）
-│   │
-│   ├── renderer/                           渲染层（每个目录一个独立窗口）
-│   │   ├── pet/                            宠物：Canvas 动画、气泡、拖动、双击开背包、右键开设置
-│   │   │   ├── index.html
-│   │   │   └── main.js
-│   │   ├── backpack/                       背包：列表、已阅/收藏/少看、按日期倒序
-│   │   │   ├── index.html
-│   │   │   └── main.js
-│   │   ├── settings/                       设置：接口、偏好、提醒、外观、高级
-│   │   │   ├── index.html
-│   │   │   └── main.js
-│   │   └── onboarding/                     首次引导
-│   │       ├── index.html
-│   │       └── main.js
-│   │
-│   └── common/
-│       ├── discovery.js                     背包账本：去重、URL upsert、旧条目回填
-│       └── engines/
-│           ├── openai.js                    OpenAI 兼容 + DeepSeek 搜索/抓取、模型判断、中文简介
-│           ├── prompt.js                    提示词（搜索查询、事件判断、JSON schema）
-│           ├── pipeline.js                  巡逻管道：搜索 → 去重 → 判断 → 落库 → 提醒决策
-│           ├── dedup.js                     批内去重：URL 去重、标题相似合并、历史事件关联
-│           ├── normalize.js                 URL 规范化、内容指纹、文本清洗、中文判断
-│           ├── search.js                    DeepSeek 搜索 / 抓取封装
-│           ├── github-trending.js           GitHub 热榜抓取（HTML 解析）
-│           ├── github-recommend.js          热榜去重、兴趣打分、中文简介
-│           ├── registry.js                  引擎注册表
-│           ├── index.js                     引擎入口（check / runPatrol）
-│           └── util.js                      通用工具
-│
-└── test-*.mjs                               离线验证脚本（不需要网络/模型）
-    ├── test-pipeline.mjs                    管道与去重（35 例）
-    ├── test-review-fixes.mjs                审核项回归（9 例）
-    └── test-backpack-dedup.mjs              背包去重专项（33 例）
-```
+在「设置 → 兴趣与屏蔽」里添加关注关键词和屏蔽主题，巡逻和 GitHub 推荐都会受到影响。
+搜索范围可选「只看今天」或「近 7 天」。
 
 ---
 
@@ -155,6 +133,10 @@ npm start          # 自动先 build，再启动
    并给出**中文一句话简介**
 5. **落库**：文章、事件、通知三张表 + 候选状态
 6. **提醒**：遵守免打扰 / 每日上限 / 全屏，一次只弹一条，其余进积压队列
+7. **失败处理**：搜索或模型失败时明确显示错误状态，**不会**当作"没有新消息"
+
+更细的设计（搜索词构造、提示词、事件判断标准）见
+[`docs/DeepSeek桌宠搜索去重与提示词设计.md`](docs/DeepSeek桌宠搜索去重与提示词设计.md)。
 
 ---
 
@@ -162,22 +144,39 @@ npm start          # 自动先 build，再启动
 
 | 分组 | 项 | 说明 |
 |---|---|---|
-| 偏好 | 关注内容 | 兴趣关键词，影响搜索与推荐 |
-| | 屏蔽词 | 搜索时排除的主题 |
+| 基本 | 宠物名字 | 显示在桌宠上 |
+| | 检查频率 | 巡逻间隔（分钟） |
+| | 每日最多弹气泡 | `0` = 不限；达到后进背包不弹窗 |
 | | 搜索范围 | 只看今天 / 近 7 天 |
-| 提醒 | 检查频率 | 巡逻间隔（分钟） |
-| | 每日最多弹气泡 | 0 = 不限；达到后进背包不弹窗 |
-| | 免打扰 | 时段内不主动弹 |
-| | 未读轮播 | 有未读时持续轮播提醒 |
-| 外观 | 缩放 | 小 / 标准 / 大 / 特大（窗口随之缩放） |
-| | 气泡时长 | 气泡停留秒数 |
-| 高级 | 每次查询数 / Fetch 上限 | 搜索广度 |
-| | 事件保存天数 | 内部历史事件保留期 |
-| | 模型 JSON Output | 提升解析稳定性 |
+| | GitHub 每次推荐几个 | 热榜推荐数量 |
+| 高级设置 | 开机自动启动 | |
+| | 气泡显示时长 | 气泡停留秒数 |
+| 兴趣与屏蔽 | 关注兴趣 / 屏蔽主题 | 影响搜索与推荐 |
+| 免打扰 | 启用免打扰时段 | 时段内不主动弹 |
+| 接口 | Base URL / API Key / Model / Search Base URL | 带连通性检测 |
+| 高级搜索参数 | 每次查询数 / 单次 Fetch 上限 / 事件保存天数 | |
+| 宠物外观 | 缩放（小 / 标准 / 大 / 特大）、测试动作 | |
 
 ---
 
-## 测试
+## 开发与测试
+
+### 项目结构
+
+```
+.
+├── assets/pet/                 宠物素材（6 张 5×5 精灵图 + 角色标准图）
+├── docs/                       设计文档
+├── src/
+│   ├── main/                   主进程：窗口、IPC、调度、托盘、持久化
+│   ├── preload/                上下文桥（IPC 白名单）
+│   ├── renderer/               渲染层（宠物 / 背包 / 设置 / 引导 四个窗口）
+│   └── common/                 共享逻辑：背包账本 + 搜索引擎
+├── test-*.mjs                  离线验证脚本
+└── .github/workflows/build.yml CI 打包
+```
+
+### 跑测试
 
 ```bash
 node test-pipeline.mjs
@@ -185,17 +184,9 @@ node test-review-fixes.mjs
 node test-backpack-dedup.mjs
 ```
 
-覆盖：URL 规范化、内容指纹、标题相似去重、背包 upsert、中文简介、
-JSON 容错解析、日期解析、背包去重准绳等。
-
----
-
-## 打包
-
-```bash
-npm run build     # 产出 out/
-npm run dist      # 打包 exe（NSIS 安装版 + 便携版）
-```
+共 **77 例**，覆盖：URL 规范化、内容指纹、标题相似去重、背包 upsert、
+中文简介生成、JSON 容错解析、日期解析、背包去重准绳等。
+全部离线运行，不需要网络和 API Key。
 
 ### 用 GitHub Actions 打包
 
@@ -209,12 +200,66 @@ npm run dist      # 打包 exe（NSIS 安装版 + 便携版）
 构建流程：安装依赖 → 编译 → 跑 77 个离线测试 → 打包。全部在 GitHub 的
 Windows 服务器上完成，不需要本地环境。
 
+### 换掉桌宠素材
+
+`assets/pet/` 下是 6 张 5×5 精灵图（`idle` / `sleep` / `walk` / `discover` /
+`deliver` / `pet`）+ 一张 `character-base.png`（引导页 logo）。
+渲染层会把每帧裁到共用矩形、归一化到统一高度并居中，所以替换时只要保持
+**每格角色大小和位置一致**，动画就不会抖动。
+
 ---
 
-## 技术栈
+## 常见问题
 
-- Electron 33 + electron-vite
-- Canvas 2D 绘制宠物（程序化呼吸/眨眼 + 精灵表动作）
-- electron-store 本地持久化
-- OpenAI 兼容接口 + DeepSeek 搜索 / 抓取
-- electron-builder 打包
+**Q：气泡一直弹个不停？**
+背包里有未读条目时默认开启轮播提醒。把条目标记为已阅，或在设置里关掉。
+
+**Q：同一条新闻会不会反复提醒？**
+不会。背包是去重账本：同一 URL 内容指纹没变就直接跳过。
+只有内容真的变了（实质新进展）才会再推一次。
+
+**Q：我删掉了背包里的一条，它又推回来了，正常吗？**
+正常。删除等于告诉程序"我没看过这条"，所以该 URL 重新可用。
+
+**Q：搜索失败会不会显示成"没有新消息"？**
+不会。状态栏会明确显示 `error` 和原因（网络 / 搜索 / 模型），不会静默。
+
+**Q：我的 API Key 安全吗？**
+只写在本地 `%APPDATA%\scout-cat\config.json`，不进仓库、不上传。
+私有仓库和 CI 里都不含任何密钥。
+
+**Q：能换别的模型吗？**
+可以。任何 OpenAI 兼容接口都行，填自己的 Base URL + Key + Model 即可。
+
+**Q：支持 macOS / Linux 吗？**
+目前只验证了 Windows。代码基于 Electron 理论上可移植，但没有测试过。
+
+---
+
+## 已知限制
+
+- **动画素材由图像模型生成**：同一动作的 25 帧姿势差异有限，不是手工关键帧动画。
+  渲染层已做帧间归一化与居中，尽量消除抖动。
+- **安装包未代码签名**：Windows SmartScreen 会拦截一次。
+- **仅验证 Windows**：macOS / Linux 未测试。
+- **需要自备 API Key**：搜索和摘要都会产生调用成本。
+
+---
+
+## 参与贡献
+
+欢迎提 Issue 和 PR。本地跑起来：
+
+```bash
+npm install && npm start
+```
+
+改动后请先跑一遍离线测试（77 例）再提交。
+
+---
+
+## 许可证
+
+[MIT](LICENSE) © 2026 konka0812
+
+桌宠素材（`assets/pet/`）由 AI 生成，可自由替换。
