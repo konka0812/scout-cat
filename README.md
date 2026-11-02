@@ -260,6 +260,6 @@ npm install && npm start
 
 ## 许可证
 
-[MIT](LICENSE) © 2026 konka0812
+[MIT](LICENSE) © 2026 Scout Cat Contributors
 
 桌宠素材（`assets/pet/`）由 AI 生成，可自由替换。
