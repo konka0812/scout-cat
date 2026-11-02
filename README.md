@@ -79,7 +79,7 @@ npm start          # 自动先 build，再启动
 └── 情报猎猫桌宠产品方案.md                产品方案
 │
 ├── assets/pet/                     宠物素材（已预生成，运行时只读）
-│   ├── character-base.png          角色标准图（引导页 logo、动作兜底）
+│   ├── character-base.png          角色标准图（引导页 logo）
 │   ├── idle.png                    待机 5×5 精灵图（运行时用第 0 帧 + 程序动画）
 │   ├── sleep.png                   睡觉 5×5 精灵图（同上）
 │   ├── walk.png                    行走 5×5 精灵图（同上）
@@ -135,11 +135,6 @@ npm start          # 自动先 build，再启动
     ├── test-pipeline.mjs                    管道与去重（35 例）
     ├── test-review-fixes.mjs                审核项回归（9 例）
     └── test-backpack-dedup.mjs              背包去重专项（33 例）
-```
-
-```
-scripts/
-└── gen-sheets.mjs    重新生成六个动作的 5×5 精灵图（需 IMAGE_API_KEY）
 ```
 
 ---
