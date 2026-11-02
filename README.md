@@ -263,3 +263,5 @@ npm install && npm start
 [MIT](LICENSE) © 2026 Scout Cat Contributors
 
 桌宠素材（`assets/pet/`）由 AI 生成，可自由替换。
+
+安全相关请看 [SECURITY.md](SECURITY.md)：API Key 只存本机，不进仓库、不上传。
