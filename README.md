@@ -197,6 +197,18 @@ npm run build     # 产出 out/
 npm run dist      # 打包 exe（NSIS 安装版 + 便携版）
 ```
 
+### 用 GitHub Actions 打包
+
+已配置 `.github/workflows/build.yml`：
+
+- 推送 `v*` 标签 → 自动构建 NSIS 安装版和便携版，并挂到对应 Release
+- 手动触发 → 仓库页 Actions → Build Windows Installer → Run workflow
+- 手动触发时可选 target：`nsis`（默认）/ `portable` / `all`
+- 产物在该次运行的 Artifacts 里下载，保留 30 天
+
+构建流程：安装依赖 → 编译 → 跑 77 个离线测试 → 打包。全部在 GitHub 的
+Windows 服务器上完成，不需要本地环境。
+
 ---
 
 ## 技术栈
